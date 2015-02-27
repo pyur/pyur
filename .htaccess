@@ -1,0 +1,32 @@
+RewriteEngine on
+
+ErrorDocument 404 /error.php
+
+RewriteRule ^e\/(\w+\/){1,2}$ /embed.php [L]
+RewriteRule ^i\/.*$ /image.php [L]
+RewriteRule ^s\/(\w+)\/$ /m/$1/style.css [L]
+RewriteRule ^j\/(\w+)\/$ /m/$1/script.js [L]
+RewriteRule ^(sh\/.*)$ $1 [L]
+RewriteRule ^(\w+\/){0,2}$ /main.php [L]
+
+
+
+#<VirtualHost *:80>
+#    ServerAdmin admin@domain.com
+#    DocumentRoot "c:/www/pyurm"
+#    ServerName domain.com
+#    ErrorLog "logs/error.example.log"
+#    CustomLog "logs/access.example.log" bdsx
+#    #LogFormat "%a %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-Agent}i\" %{userx}n %{X-Forwarded-For}i" bdsx
+#
+#    RewriteEngine on
+#
+#    ErrorDocument 404 /error.php
+#
+#    RewriteRule ^\/e\/(\w+\/){1,2}$ /embed.php [L]
+#    RewriteRule ^\/i\/.*$ /image.php [L]
+#    RewriteRule ^\/s\/(\w+)\/$ /m/$1/style.css [L]
+#    RewriteRule ^\/j\/(\w+)\/$ /m/$1/script.js [L]
+#    RewriteRule ^(\/sh\/.*)$ $1 [L]
+#    RewriteRule ^\/(\w+\/){0,2}$ /main.php [L]
+#</VirtualHost>

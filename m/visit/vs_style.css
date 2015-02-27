@@ -1,0 +1,217 @@
+td.vsc {
+	text-align: left;
+	padding: 0 0 0 2px;
+	vertical-align: top;
+	min-width: 188px;
+	max-width: 188px;
+	height: 100px;
+	}
+
+div.vsn {
+	font-size: 10pt;
+	float: right;
+	width: 17px;
+	height: 17px;
+	margin: 2px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	text-align: center;
+	}
+
+div.vsv {
+	font-size: 10pt;
+	text-indent: -46px;
+	padding-left: 46px;
+	}
+
+div.vsm {
+	display: inline;
+	}
+
+div.vsd {
+	color: #888;
+	display: inline;
+	cursor: pointer;
+	}
+
+a.vsd {
+	color: #888;
+	}
+
+  /* <600 */
+@media (max-width: 999px) {
+
+td.vsc {
+	min-width: 80px;
+	max-width: 80px;
+	height: 70px;
+	}
+
+div.vsn {
+	font-size: 7pt;
+	width: 11px;
+	height: 11px;
+	margin: 1px;
+	line-height: 11px;
+	border-radius: 3px;
+	}
+
+div.vsv {
+	font-size: 7pt;
+	text-indent: 0px;
+	padding-left: 0px;
+	}
+
+div.vsm {
+	display: none;
+	}
+
+div.vsd {
+	display: block;
+	}
+
+}
+
+  /* 1024 */
+@media (min-width: 1000px) and (max-width: 1253px) {
+
+td.vsc {
+	min-width: 140px;
+	max-width: 140px;
+	height: 80px;
+	}
+
+div.vsn {
+	font-size: 8pt;
+	width: 12px;
+	height: 12px;
+	margin: 1px;
+	line-height: 12px;
+	border-radius: 3px;
+	}
+
+div.vsv {
+	font-size: 8pt;
+	text-indent: -38px;
+	padding-left: 38px;
+	}
+
+}
+
+  /* for 1280 */
+@media (min-width: 1254px) and (max-width: 1339px) {
+
+td.vsc {
+	min-width: 177px;
+	max-width: 177px;
+	height: 100px;
+	}
+
+div.vsn {
+	font-size: 10pt;
+	width: 17px;
+	height: 17px;
+	}
+
+div.vsv {
+	font-size: 10pt;
+	text-indent: -46px;
+	padding-left: 46px;
+	}
+
+}
+
+  /* for 1366 */
+@media (min-width: 1340px) and (max-width: 1579px) {
+
+td.vsc {
+	min-width: 188px;
+	max-width: 188px;
+	height: 96px;
+	}
+
+div.vsn {
+	font-size: 10pt;
+	width: 17px;
+	height: 17px;
+	}
+
+div.vsv {
+	font-size: 10pt;
+	text-indent: -46px;
+	padding-left: 46px;
+	}
+
+}
+
+
+  /* for 1600 */
+@media (min-width: 1580px) and (max-width: 1899px) {
+
+td.vsc {
+	min-width: 223px;
+	max-width: 223px;
+	height: 100px;
+	}
+
+div.vsn {
+	font-size: 10pt;
+	width: 17px;
+	height: 17px;
+	}
+
+div.vsv {
+	font-size: 10pt;
+	text-indent: -46px;
+	padding-left: 46px;
+	}
+
+}
+
+
+  /* for 1920 */
+@media (min-width: 1900px) and (max-width: 2499px) {
+
+td.vsc {
+	min-width: 266px;
+	max-width: 266px;
+	height: 160px;
+	}
+
+div.vsn {
+	font-size: 12pt;
+	width: 20px;
+	height: 20px;
+	}
+
+div.vsv {
+	font-size: 12pt;
+	text-indent: -56px;
+	padding-left: 56px;
+	}
+
+}
+
+
+  /* for 2560 */
+@media (min-width: 2500px) {
+
+td.vsc {
+	min-width: 266px;
+	max-width: 266px;
+	height: 160px;
+	}
+
+div.vsn {
+	font-size: 12pt;
+	width: 20px;
+	height: 20px;
+	}
+
+div.vsv {
+	font-size: 12pt;
+	text-indent: -56px;
+	padding-left: 56px;
+	}
+
+}
