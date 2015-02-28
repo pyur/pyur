@@ -135,8 +135,7 @@ function authorization() {
                           'col' => array('user`.`name',
                                          'user_cat`.`perm',
                                          ),
-                          'where' => array(//'`user`.`org` = '.$auth['org'],
-                                           '`user`.`id` = \''.$sess.'\'',
+                          'where' => array('`user`.`id` = \''.$sess.'\'',
                                            '`user_cat`.`id` = `user`.`cat`',
                                            ),
                           ));
@@ -154,11 +153,6 @@ function authorization() {
 
 
   apache_note('userx', $auth['id']);
-
-
-
-
-    // --------------------------------- modules cache --------------------------------- //
 
 
 

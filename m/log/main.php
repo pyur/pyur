@@ -464,7 +464,7 @@ table.lst td:nth-child(8) i {display: inline; vertical-align: baseline; backgrou
       if ($resize)  $i = array_search($vic, $submenu_icons);
       if ($i !== FALSE) {
         $x = ($i % 64) * 16;
-        $y = floor($i / 64) * 16;
+        $y = floor($i / 64) * 16  + $modules_h;
 
         b('table.lst td:nth-child(8) hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
@@ -488,7 +488,7 @@ table.lst td:nth-child(8) hr {width: 9px; height: 9px; margin: 0 2px 0 0;}
       if ($resize)  $i = array_search($vic, $submenu_icons);
       if ($i !== FALSE) {
         $x = ($i % 64) * 16;
-        $y = floor($i / 64) * 16;
+        $y = floor($i / 64) * 16  + $modules_h;
 
         b('table.lst td:nth-child(8) hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
@@ -690,7 +690,6 @@ if ($act == 'uas') {
   b('<tr><td class="th" width="200">');
   b('User-agent string:');
   b('<td class="t">');
-  //b('<input id="f_search" type="text" size="100">');
   b(form_t('@f_search', '', 1000));
   
   b('</table>');
@@ -963,22 +962,10 @@ if ($act == 'dft') {
 
   if (!$gcnf) {
   
-    //$server = db_read(array('table' => 'server',
-    //                        'col' => array('id', 'desc'),
-    //                        'order' => 'sort',
-    //
-    //                        'key' => 'id',
-    //                        ));
     $server = db_read(array('table' => 'server',
                             'col' => array('id', 'tp', 'desc'),
                             'key' => 'tp',
                             ));
-    //$pid = 0;
-    //$server = array();
-    //while(isset($servern[$pid])) {
-    //  $server[$servern[$pid]['id']] = $servern[$pid];
-    //  $pid = $servern[$pid]['id'];
-    //  }
     $server = tsort($server);
 
   
@@ -992,7 +979,6 @@ if ($act == 'dft') {
     b('Сервер:');
     b('<td class="t">');
     b('<select name="f_server" autofocus>');
-    //b('<option value="0">- - - - - - - - - - - - - - - -');
     foreach ($server as $k=>$v)  b('<option value="'.$k.'"'.(($k == $gsrv)?' selected':'').'>'.$v['desc']);
     b('</select>');
 
@@ -1045,10 +1031,8 @@ if ($act == 'dft') {
     if ($gyear)  $where[] = '`log`.`datetime` >= \''.datesql($gyear, $gmon, $gday).' 00:00:00\'';
 
     $count = db_read(array('table' => 'log',
-                           //'col' => '*',
                            'where' => $where,
                            ));
-    //$count = $count['COUNT(*)'];
 
 
     $where[] = '`ua`.`id` = `log`.`uan`';
@@ -1136,7 +1120,7 @@ if ($act == 'imp') {
     b('<tr><td class="t" width="150">');
     b('Сервер:');
     b('<td class="t">');
-    b('<select name="f_server">');
+    b('<select name="f_server" autofocus>');
     foreach ($server as $k=>$v)  b('<option value="'.$k.'"'.(($k == $gsrv)?' selected':'').'>'.$v['desc']);
     b('</select>');
 
@@ -1558,29 +1542,11 @@ if ($act == 'grm') {
   if ($gipf)  $where[] = '`ipf` = INET_ATON(\''.$gipf.'\')';
 
 
-
-
-  //$log = db_read(array('table' => array('log', 'ua'),
-  //                     'col' => array('log`.`id', '@ip', 'log`.`datetime', 'log`.`result',
-  //                                    'ua`.`type',
-  //                                    ),
-  //                     'where' => $where,
-  //                     'key' => 'id',
-  //                     ));
-
   $log = db_read(array('table' => 'log',
                        'col' => array('id', '@ip', 'datetime', 'type'),
                        'where' => $where,
                        'key' => 'id',
                        ));
-
-  //db_close();
-  //mysql_connect('127.0.0.1', 'kira', 'kira');
-  //mysql_select_db('kira' ? 'kira' : 'kira');
-  //mysql_query('SET CHARACTER SET utf8');
-
-  //include '../share/lp.php';
-
 
 
   $set = array();
@@ -1636,9 +1602,6 @@ if ($act == 'grm') {
 
     // ---------------- сетка ---------------- //
 
-  //bool imageline ( resource $image , int $x1 , int $y1 , int $x2 , int $y2 , int $color )
-  //bool imagesetpixel ( resource $image , int $x , int $y , int $color )
-
   $image = imagecreatetruecolor ($par['w']*$gscl, $par['h']*$gscl+14);
 
   $black = imagecolorallocate ($image, 0, 0, 0);
@@ -1654,7 +1617,6 @@ if ($act == 'grm') {
 
 
   imagefilledrectangle ($image, 0, 0, $par['w']*$gscl-1, $par['h']*$gscl-1 +14, $white);
-  //imagefilledrectangle ($image, 0, 0, $par['w']*3-1, $par['h']*3-1 +14, $green);
 
 
     // -------- дни недели -------- //
@@ -1695,7 +1657,6 @@ if ($act == 'grm') {
   //imagettftext ($image, $par['f'], 0, $y, $x, $black, 'p/tahoma.ttf', $v);
   //$image = imagerotate ($image, 90, $black);
 
-  //bool imagecopyresized ( resource $dst_image , resource $src_image , int $dst_x , int $dst_y , int $src_x , int $src_y , int $dst_w , int $dst_h , int $src_w , int $src_h )
   imagecopyresized ($image, $image_graph, 0,0 , 0,0 , $par['w']*$gscl , $par['h']*$gscl , $par['w'] , $par['h'] );
 
 
@@ -1828,9 +1789,6 @@ if ($act == 'grd') {
 if ($act == 'gry') {
   $ajax = TRUE;
 
-  //include '../share/lp.php';
-
-
   $dateb = datesql($gyear, 1, 1);
   $datee = datesql($gyear, 12, 31);
   $days = 365 + date('L', mktime (0,0,0, 1, 1, $gyear));
@@ -1936,9 +1894,6 @@ if ($act == 'gry') {
     if (!($n % 30) || $n >= $days) {
       $datee_t = $datet;
 
-      //db_close();
-      //db_open();
-
       $where2 = $where;
       $where2[] = '`datetime` >= \''.$dateb_t.' 00:00:00\'';
       $where2[] = '`datetime` <= \''.$datee_t.' 23:59:59\'';
@@ -1951,13 +1906,6 @@ if ($act == 'gry') {
                            ));
 
       if (!$log)  $log = array();
-
-
-      //db_close();
-      //mysql_connect('127.0.0.1', 'kira', 'kira');
-      //mysql_select_db('kira' ? 'kira' : 'kira');
-      //mysql_query('SET CHARACTER SET utf8');
-
 
 
       $set = array();
@@ -2043,9 +1991,6 @@ if ($act == 'gry') {
 
 if ($act == 'gry3') {
   $ajax = TRUE;
-
-  //include '../share/lp.php';
-
 
   $dateb = datesql($gyear, 1, 1);
   $datee = datesql($gyear, 12, 31);
@@ -2151,9 +2096,6 @@ if ($act == 'gry3') {
 
     if (!($n % 30) || $n >= $days) {
       $datee_t = $datet;
-
-      //db_close();
-      //db_open();
 
       $where2 = $where;
       $where2[] = '`datetime` >= \''.$dateb_t.' 00:00:00\'';

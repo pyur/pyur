@@ -380,8 +380,6 @@ if ($act == 'usu' && p('edit')) {
     // ---- deletion ---- //
   if (!$post && $gusr && p()) {
     db_write(array('table' => $table, 'where' => $where));
-    //if (mysql_affected_rows($link_sql))  b('ok');
-    //else                                 b('failed');
     b('/'.$mod.'/');
     }
   }
@@ -632,7 +630,7 @@ if ($act == 'ucu' && p('edit_cat')) {
     // -- delete -- //
   if (!$post && $guct && p()) {
     $result = db_write(array('table' => $table, 'where' => $where));
-  
+
     b('/'.$mod.'/ucl/');
     }
 

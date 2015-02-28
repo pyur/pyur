@@ -72,10 +72,6 @@ foreach ($sort as $k) {
   //  }
   b('>');
 
-  //$x = ($i % 64) * 16;
-  //$y = floor($i / 64) * 16;
-  //b('<div class="smenui" unselectable="on" style="background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';"></div>');
-  //b('<div class="menui" unselectable="on" style="background-position:'.('-'.($v['icon']*32).'px').' 0;"></div>');
   $x = ($v['icon'] % 32) * 32;
   $y = floor($v['icon'] / 32) * 32;
   b('<div class="menui" unselectable="on" style="background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';"></div>');

@@ -114,8 +114,7 @@ else {
 
       $user = db_read(array('table' => 'user',
                             'col' => array('id', '#pass'),
-                            'where' => array(//'`org` = '.$auth['org'],
-                                             '`login` = \''.$login.'\'',
+                            'where' => array('`login` = \''.$login.'\'',
                                              '`cat` != 0',
                                              ),
                             ));

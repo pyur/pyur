@@ -239,7 +239,7 @@ if ($act == 'ele' && p('edit') ) {
   b('<tr><td>');
   b('Показание:');
   b('<td>');
-  b(form_n('f_elec_val', $elec['val'], 80, 1));
+  b(form_n('@f_elec_val', $elec['val'], 80));
 
 
   b('<tr><td>');
