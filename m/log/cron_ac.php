@@ -51,6 +51,7 @@ $warningc = 0;
 
 $server = db_read(array('table' => 'server',
                         'col' => array('id', 'logname', 'rhost', 'format'),
+                        'where' => '`format` != 0',
                         'key' => 'logname',
                         ));
 
@@ -79,7 +80,7 @@ while (($file = readdir($dh)) !== false) {
   $log_format = '';
 
 
-  if (isset($server[$log_name]) && $server[$log_name]['format']) {
+  if (isset($server[$log_name])) {
     $imp_server = $server[$log_name]['id'];
     $enable_coloring = ($server[$log_name]['rhost'] ? TRUE : FALSE);
     $log_format = $server[$log_name]['format'];
