@@ -8,6 +8,7 @@
 
   // -------------------------------- init -------------------------------- //
 
+$title = '';
 $body = '';
 $ajax = FALSE;
 
@@ -52,6 +53,7 @@ if (!$ajax) {
   //echo ($auth['type'] ? $config['page_title'] : 'Программа');
   //$title_add = ''; // TMP
   //echo ($title_add?(' - '.$title_add):'');
+  if ($title)  echo ($title);
   echo '</title>';
 
   echo '<meta charset="UTF-8">';

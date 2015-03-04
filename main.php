@@ -11,6 +11,7 @@
 
 $benchmark = array('_start' => microtime(TRUE));
 
+$title = '';
 $body = '';
 $redirect = '';
 $ajax = FALSE;

@@ -45,7 +45,8 @@ if (!$act) {
                             ));
 
 
-  b('<p class="f16 b c">Именинники</p>');
+  //b('<p class="f16 b c">Именинники</p>');
+  $title = 'Именинники';
   b('<table class="tabc">');
 
   $day_limit = 30;
@@ -111,8 +112,8 @@ if (!$act) {
 //  var vw = window.screen.availWidth;
 //  var vh = window.screen.availHeight;
 
-window.moveTo(window.screen.availWidth - 350,0);
-window.resizeTo(350,window.screen.availHeight);
+window.moveTo(window.screen.availWidth - 344,0);
+window.resizeTo(344,window.screen.availHeight);
 
 </script>
 ');
@@ -207,6 +208,153 @@ if ($act == 'v1') {
     b('</table>');
     }  //  end: if $bdpeople
 
+  }
+
+
+
+
+  // -------------------------------- embed: именинники calendar -------------------------------- //
+
+if ($act == 'cdr') {
+
+    // ---- collect birthdays ---- //
+
+  $where = array();
+  $where[] = '`people`.`id` = `people_junc`.`t`';
+  $where[] = '`people_junc`.`f` = '.$gid;
+  $where[] = 'MONTH(`birthdate`) != 0';
+  if ($gsym)  $where[] = '`people_junc`.`symp` <= '.$gsym;
+
+  $bdpeople = db_read(array('table' => array('people', 'people_junc'),
+                            'col' => array('people`.`id', 'people`.`surname', 'people`.`name', 'people`.`otchestvo', 'people`.`birthdate',
+                                           '!MONTH(`people`.`birthdate`) AS `bd_mon`', '!DAYOFMONTH(`people`.`birthdate`) AS `bd_day`',
+                                           'people_junc`.`symp',
+                                           ),
+                            'order' => '`people_junc`.`symp`',
+                            'where' => $where,
+
+                            'key' => array('bd_mon', 'bd_day', 'id'),
+                            ));
+
+
+  $gyear = datee($gdate);
+  $gmon = datee($gdate,'m');
+  $gday = datee($gdate,'d');
+  $gdays = date('t', mktime(0, 0, 0, datee($gdate,'m'), 1, datee($gdate)));
+
+  //$datebeg = datesql(mktime(0, 0, 0, $gmon, $gday - date('N', mktime(0, 0, 0, $gmon, $gday, $gyear)) -6, $gyear));
+  $datebeg = datesql(mktime(0, 0, 0, $gmon, $gday - date('N', mktime(0, 0, 0, $gmon, $gday, $gyear)) +1, $gyear));
+  $dateend = datesql(mktime(0, 0, 0, datee($datebeg,'m'), datee($datebeg,'d')+41, datee($datebeg)));
+
+
+  b('
+<style>
+td.vsc {
+	text-align: left;
+	padding: 0 0 0 2px;
+	vertical-align: top;
+	min-width: 188px;
+	max-width: 188px;
+	height: 100px;
+	}
+
+div.vsn {
+	font-size: 10pt;
+	float: right;
+	width: 17px;
+	height: 17px;
+	margin: 2px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	text-align: center;
+	}
+
+div.vsv {
+	font-size: 10pt;
+	text-indent: -46px;
+	padding-left: 46px;
+	}
+
+div.vsm {
+	display: inline;
+	}
+
+div.vsd {
+	color: #888;
+	display: inline;
+	cursor: pointer;
+	}
+
+a.vsd {
+	color: #888;
+	}
+</style>
+');
+
+
+  //b('<p class="f16 b c">Именинники</p>');
+  $title = 'Именинники';
+  b('<table class="tabc">');
+
+
+  $date = $datebeg;
+  while (1) {
+    b('<tr>');
+
+    for ($x = 0; $x < 7; $x++) {
+      $year = datee($date);
+      $mon = datee($date,'m');
+      $day = datee($date,'d');
+      $wkd = date('w', datesqltime($date));
+
+      b('<td class="vsc"');
+      if (datee($date,'m') != $gmon)  b(' style="opacity: 0.3;');
+      b('">');
+
+      b('<div class="vsn"');
+      if ($date == $curr['date'])  b(' style="background-color: #ff8;"');
+      b('>');
+      b(datee($date,'d'));
+      b('</div>');
+
+      if (isset($bdpeople[$mon][$day])) {
+
+        foreach ($bdpeople[$mon][$day] as $k=>$v) {
+          b('<p class="f10"');
+          //b('< style="opacity:">');
+          if ($v['symp'] > 69)  b(' style="opacity: 0.2;"');
+          elseif ($v['symp'] > 59)  b(' style="opacity: 0.4;"');
+          elseif ($v['symp'] > 49)  b(' style="opacity: 0.6;"');
+          b('>');
+          //b(($n++).'. ');
+          //b(fiof($v['surname'], $v['name'], $v['otchestvo']));
+          b(fiof($v['surname'], $v['name'], ''));
+          $byear = datee($v['birthdate']);
+          if ($byear) {
+            $age = $year - $byear;
+            b(', '.$age.' '.pend($age,'year'));
+            }
+
+          }
+        }
+
+      $date = datesql(mktime(0,0,0, datee($date,'m'), datee($date,'d')+1, datee($date)));
+      }
+
+    if (datesqltime($date) > datesqltime($dateend))  break;
+    }
+
+
+  b('</table>');
+
+  b('
+<script>
+
+//window.moveTo(window.screen.availWidth - 350,0);
+//window.resizeTo(350,window.screen.availHeight);
+
+</script>
+');
   }
 
 
