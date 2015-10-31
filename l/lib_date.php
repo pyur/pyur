@@ -113,11 +113,15 @@ function dateh ($dt, $mode = '') {
         }
       }
 
-    $r = implode(' ', array($date, $time));
+    $idt = array();
+    if ($date)  $idt[] = $date;
+    if ($time)  $idt[] = $time;
+    $r = implode(' ', $idt);
     }
 
   return  $r;
   }
+
 
 
 
@@ -141,73 +145,7 @@ function dateage($d, $params = array('e'=>1, 'd'=>0) ) {
   }
 
 
-  // ---- date - SQL (or component) print as human readable ---------------- //
-function datestr($y, $m=NULL, $d=NULL, $t=NULL) {
-  if (!$m) {
-    $d = substr($y,8,2);
-    $m = substr($y,5,2);
-    $y = substr($y,0,4);
-    }
-  global $montha;
-  if ($y == '0000')  return '-';
-  if ($t)  return $d.' '.$montha[(int)$m].' '.$y;
-  //return (int)$d.' '.$montha[(int)$m].' '.$y.'&nbsp;г.';
 
-  return '&lt;datestr&gt;';
-  }
-
-
-function datenum($y, $m=NULL, $d=NULL, $h=NULL, $i=NULL, $s=NULL, $t=NULL) {
-
-  if (!$m) {
-    $h = substr($y, 11, 2);
-    $i = substr($y, 14, 2);
-    $s = substr($y, 17, 2);
-    }
-
-  if (!$d) {
-    $d = substr($y, 8, 2);
-    $m = substr($y, 5, 2);
-    $y = substr($y, 0, 4);
-    }
-
-  $r = '';
-  if ((int)$d)    $r .= substr('00'.$d, -2,2).'.';
-  if ((int)$m)    $r .= substr('00'.$m, -2,2).'.';
-  if ((int)$y)    $r .= substr('0000'.$y, -4,4);
-  if (!$t && $r)  $r .= ' г.';
-
-  if ((int)$h || (int)$i || (int)$s)  $r .= ' '.substr('00'.$h, -2,2).':'.substr('00'.$i, -2,2).':'.substr('00'.$s, -2,2);
-
-  if (!$r)  $r = '- - - -';
-  //return  $r;
-  return '&lt;datenum&gt;';
-  }
-
-  // ---- weekday - SQL (or component) print as human readable ---------------- //
-function datewkd($y, $m=NULL, $d=NULL) {
-  if (!$m) {
-    $d = substr($y,8,2);
-    $m = substr($y,5,2);
-    $y = substr($y,0,4);
-    }
-  global $weekdayn;
-  //return $weekdayn[date('w', mktime(0,0,0, $m, $d, $y))];
-  return '&lt;datewkd&gt;';
-  }
-
-  // ---- weekday - SQL (or component) print as number ---------------- //
-function datewkdn($y, $m=NULL, $d=NULL) {
-  if (!$m) {
-    $d = substr($y,8,2);
-    $m = substr($y,5,2);
-    $y = substr($y,0,4);
-    }
-  $w = date('w', mktime(0,0,0, $m, $d, $y));
-  if (!$w)  $w = 7;
-  //return $w;
-  return '&lt;datewkdn&gt;';
-  }
 
   // ---- date difference ---------------- //
 function datef($b, $e) {
