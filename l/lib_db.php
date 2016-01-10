@@ -403,4 +403,14 @@ function  tsort ($a, $c = FALSE, $id = FALSE, $db = FALSE) {
   }
 
 
+
+
+  // ---------------- inet_aton ---------------- //
+
+function  inet_aton ($addr) {
+  $e = explode('.', $addr);
+  return  ($e[0] * 16777216) + ($e[1] * 65536) + ($e[2] * 256) + $e[3];
+  }
+
+
 ?>

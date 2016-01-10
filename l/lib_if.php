@@ -314,12 +314,22 @@ function  icon ($icon) {
     b('<style>'."\n");
 
     foreach ($icon as $v) {
+      $w = FALSE;
+      $h = FALSE;
+      if (is_array($v)) {
+        $w = $v[1];
+        if (isset($v[2]))  $h = $v[2];
+        $v = $v[0];
+        }
+
       $i = array_search($v, $submenu_icons);
       if ($i !== FALSE) {
         $x = ($i % 64) * 16;
         $y = floor($i / 64) * 16  + $modules_h;
 
-        b('i.'.$v.' {background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
+        b('hr.'.$v.' {background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';');
+        if ($w)  b(' width: '.$w.'px; height: '.($h?$h:$w).'px;');
+        b('}'."\n");
         }
       }
 
@@ -328,14 +338,18 @@ function  icon ($icon) {
 
 
   else {
-    return  '<i class="'.$icon.'"></i>';
+    return  '<hr class="'.$icon.'">';
     }
   }
 
 
-function  icona ($p) {
-  static $n = -1;
+function  icona ($p, $px = 'i') {
+  static $n;
   static $m;
+
+  if (!isset($n[$px]))  $n[$px] = -1;
+  if (!isset($m[$px]))  $m[$px] = 0;
+
 
   if (is_array($p)) {
     global $submenu_icons;
@@ -348,22 +362,29 @@ function  icona ($p) {
       if ($i !== FALSE) {
         $x = ($i % 64) * 16;
         $y = floor($i / 64) * 16  + $modules_h;
-        b('a.i'.$k.' {display: inline-block; width: 16px; height: 16px; margin: 0 2px 0 0; vertical-align: bottom; background-image: url(\'/c/s.png\'); background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
+        b('a.'.$px.$k.' {display: inline-block; width: 16px; height: 16px; margin: 0 2px 0 0; vertical-align: bottom; background-image: url(\'/c/s.png\'); background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
       }
 
     b('</style>');
-    $m = count($p);
+    $m[$px] = count($p);
     }
 
   else {
-    $n++;
-    $t = FALSE;
+    $n[$px]++;
+    $r = '';
     if ($p[0] == '!') {
       $p = substr($p, 1);
-      $t = TRUE;
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" href="'.$p.'" target="_blank"></a>';
       }
-    return  '<a class="i'.($n%$m).'" href="'.$p.'"'.($t?' target="_blank"':'').'></a>';
+    elseif ($p[0] == '#') {
+      $p = substr($p, 1);
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" onclick="'.$p.'"></a>';
+      }
+    else {
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" href="'.$p.'"></a>';
+      }
+    return $r;
     }
   }
 
@@ -502,7 +523,7 @@ function  form_s ($n, $a, $dv = 0) {
 
   $ne = explode(',', $n);
 
-  $o .= '<select '.(isset($ne[1]) ? ' id="'.$ne[1].'"' : '').($ne[0] ? ' name="'.$ne[0].'"' : '').($f ? ' autofocus' : '').'>';
+  $o .= '<select'.(isset($ne[1]) ? ' id="'.$ne[1].'"' : '').($ne[0] ? ' name="'.$ne[0].'"' : '').($f ? ' autofocus' : '').'>';
   if ($z)  $o .= '<option value="0">- - - - -';
   foreach ($a as $k=>$v)  $o .= '<option value="'.$k.'"'.(($k == $dv)?' selected':'').'>'.(($ad !== FALSE) ? $v[$ad] : $v);
   $o .= '</select>';
@@ -529,9 +550,20 @@ function  form_c ($n, $v) {
 
   // ---------------- form ---------------- //
 
-function  form ($n, $a) {
+function  form ($n, $a, $p = '') {
   global $mod;
-  return   b('<form name="'.$n.'" enctype="multipart/form-data" action="'.$a.'" method="post" onsubmit="
+
+  if ($p) {
+    $tmp = array();
+    foreach ($p as $v) {
+      if ($v)  $tmp[] = $v;
+      }
+    if ($tmp)  $p = '?'.implode('&', $tmp);
+    else  $p = '';
+    }
+  else  $p = '';
+
+  return   b('<form name="'.$n.'" enctype="multipart/form-data" action="'.$a.$p.'" method="post" onsubmit="
 //event.preventDefault();
 
 $.ajax(this.action, 

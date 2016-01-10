@@ -49,8 +49,8 @@ table.lst tr:first-child td {font-weight: bold; background-color: #ddd; text-ali
 table.lst tr:nth-child(odd) {background-color: #eee;}
 table.lst td {text-align: left; padding: 0 0 0 2px;}
 
-table.edt td:nth-child(1) {padding: 0 0 16px 0; text-align: left; border: none; font-weight: bold; min-width: 200px; max-width: 200px;}
-table.edt td:nth-child(2) {padding: 0 0 16px 0; text-align: left; border: none;}
+table.edt td:nth-child(1) {padding: 0 0 16px 0; vertical-align: top; text-align: left; border: none; font-weight: bold; min-width: 200px; max-width: 200px;}
+table.edt td:nth-child(2) {padding: 0 0 16px 0; vertical-align: top; text-align: left; border: none;}
 table.w2 td:nth-child(1) {min-width: 250px; max-width: 250px;}
 table.w3 td:nth-child(1) {min-width: 300px; max-width: 300px;}
 
@@ -221,6 +221,7 @@ div.cbubble {
  /* end: context menu/bubble */
 
  /* icon */
+/*
 i {
 	display: inline-block;
 	width: 16px;
@@ -228,14 +229,14 @@ i {
 	vertical-align: -3px;
 	background-image: url('c/s.png');
 	}
-
+*/
 hr {
 	display: inline-block;
 	border: none;
 	width: 16px;
 	height: 16px;
 	margin: 0;
-	vertical-align: bottom;
+	/*vertical-align: bottom;*/
 	background-image: url('c/s.png');
 	}
 

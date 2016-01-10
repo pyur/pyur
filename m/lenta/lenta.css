@@ -125,13 +125,13 @@ div.descf p {
 @media (min-width: 1340px) and (max-width: 1579px) {
 
 p {
-	font-size: 30pt;
+	font-size: 24pt;
 	text-indent: 64px;
 	margin: 12px 0;
 	}
 
 div.container {
-	width: 1300px;
+	width: 1200px;
 	border: 2px solid #888;
 	border-radius: 12px;
 	padding: 8px;
@@ -139,7 +139,7 @@ div.container {
 	}
 
 div.caption {
-	font-size: 40pt;
+	font-size: 34pt;
 	}
 
 }
@@ -155,13 +155,13 @@ div.caption {
 @media (min-width: 1900px) and (max-width: 2499px) {
 
 p {
-	font-size: 40pt;
+	font-size: 30pt;
 	text-indent: 100px;
 	margin: 12px 0;
 	}
 
 div.container {
-	width: 1900px;
+	width: 1600px;
 	border: 3px solid #888;
 	border-radius: 12px;
 	padding: 8px;
@@ -169,7 +169,7 @@ div.container {
 	}
 
 div.caption {
-	font-size: 50pt;
+	font-size: 40pt;
 	}
 
 }

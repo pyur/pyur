@@ -1,7 +1,7 @@
 <?php
 
 /************************************************************************/
-/*  user agent string  v1.3o                                            */
+/*  user agent string  v1.31                                            */
 /************************************************************************/
 
 
@@ -25,6 +25,8 @@ $db_uas_browser = array(
 
   12 => array('d' => 'none',              'i' => ''),
   13 => array('d' => 'robot Yandex Images', 'i' => 'yi'),
+
+  14 => array('d' => 'Edge',              'i' => 'ie'),
   );
 
 
@@ -49,6 +51,7 @@ $db_uas_os = array(
   15 => array('d' => 'Android 3',        'i' => 'a3'),
   16 => array('d' => 'Android 4',        'i' => 'a4'),
   17 => array('d' => 'Android 5',        'i' => 'a5'),
+  27 => array('d' => 'Android 6',        'i' => 'a5'),
 
   18 => array('d' => 'Linux',            'i' => 'l'),
   19 => array('d' => 'Ubuntu',           'i' => 'lu'),
@@ -61,6 +64,7 @@ $db_uas_os = array(
   24 => array('d' => 'Bing robot',        'i' => 'bg'),
   25 => array('d' => 'Yahoo robot',       'i' => 'yh'),
   26 => array('d' => 'Sputnik robot',     'i' => 'sp'),
+  //28
   );
 
 // Windows NT 6.3	Windows 8.1
@@ -76,6 +80,7 @@ $db_uas_os = array(
 // Windows 98	Windows 98
 // Windows 95	Windows 95
 // Windows CE	Windows CE
+// Windows NT 10.0      Windows 10
 
 
 $db_uai = array(
@@ -452,6 +457,21 @@ function  parse_ua ($ua) {
     }
 
 
+    // -------- MS Edge -------- //
+
+  elseif (isset($vr['Edge'])) {
+    $br = 'Edge';
+    $brn = 14;
+    $v = explode('.', $vr['Edge']);
+    if ($v[0])  $brv = $v[0];
+    if (isset($v[1]))  $brm = $v[1];
+    }
+
+
+
+// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/42.0.2311.135 Safari/537.36 Edge/12.10240
+// Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/46.0.2486.0 Safari/537.36 Edge/13.10586
+
   // RockMelt for Macintosh
   // Flock
   // Awesomium
@@ -687,6 +707,10 @@ function  parse_ua ($ua) {
     $os = 'Windows 10 beta';
     $osn = 8;
     }
+  elseif (isset($oi['Windows NT 10.0'])) {
+    $os = 'Windows 10';
+    $osn = 8;
+    }
   elseif (isset($oi['Windows NT 5.0'])) {
     $os = 'Windows 2000';
     $osn = 1;
@@ -709,6 +733,7 @@ function  parse_ua ($ua) {
     elseif ($v == 3)  $osn = 15;
     elseif ($v == 4)  $osn = 16;
     elseif ($v == 5)  $osn = 17;
+    elseif ($v == 6)  $osn = 27;
     else  $osn = 13;
 
     if (!$br) {

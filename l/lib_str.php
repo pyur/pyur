@@ -206,6 +206,19 @@ function filter_ln($text) {
   return  $text;
   }
 
+function filter_url($text) {
+  $filter = array('0','1','2','3','4','5','6','7','8','9',  // RFC 3986 section 2.3 Unreserved Characters (January 2005)
+                  'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+                  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+                  '-','.','_','~'
+                  // $-_.+!*'(),
+                  // !*'();:@&=+$,/?#[]  RFC 3986 section 2.2 Reserved Characters (January 2005)
+                  // {}| unknown state
+                  );
+  $text = filter($text, $filter);
+  return  $text;
+  }
+
 function filter_n($text) {
   $filter = array('0','1','2','3','4','5','6','7','8','9');
   $text = filter($text, $filter);
@@ -299,25 +312,44 @@ function cookieb($a) {
 
   // -------------------------------- phonen -------------------------------- //
 
-function  phonen($item_phone) {
-  $nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+//function  phonen($item_phone) {
+//  $nums = array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9');
+//
+//  $phonen = '';
+//  if ($item_phone) {
+//    for ($i = 0; $i < strlen($item_phone); $i++) {
+//      if (in_array($item_phone[$i], $nums))  $phonen .= $item_phone[$i];
+//      }
+//
+//    if     (strlen($phonen) > 11)  $phonen = substr($phonen, 0, 11);
+//
+//    if     (strlen($phonen) == 11 && substr($phonen, 0, 2) == '89')  $phonen = substr($phonen, 1);
+//    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '79')  $phonen = substr($phonen, 1);
+//    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '84')  $phonen = substr($phonen, 1);
+//    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '74')  $phonen = substr($phonen, 1);
+//    }
+//
+//  return  $phonen;
+//  }
 
-  $phonen = '';
-  if ($item_phone) {
-    for ($i = 0; $i < strlen($item_phone); $i++) {
-      if (in_array($item_phone[$i], $nums))  $phonen .= $item_phone[$i];
+
+  // -------------------------------- make phone human readable -------------------------------- //
+
+function  phoned($phone) {
+  $phoned = $phone;
+
+  if (strlen($phone) == 10) {
+    if ($phone[0] == '9') {
+      $phoned = substr($phone,0,3).'-'.substr($phone,3,3).'-'.substr($phone,6,2).'-'.substr($phone,8,2);
       }
-
-    if     (strlen($phonen) > 11)  $phonen = substr($phonen, 0, 11);
-
-    if     (strlen($phonen) == 11 && substr($phonen, 0, 2) == '89')  $phonen = substr($phonen, 1);
-    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '79')  $phonen = substr($phonen, 1);
-    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '84')  $phonen = substr($phonen, 1);
-    elseif (strlen($phonen) == 11 && substr($phonen, 0, 2) == '74')  $phonen = substr($phonen, 1);
+    }
+  elseif (strlen($phone) == 6) {
+    $phoned = substr($phone,0,2).'-'.substr($phone,2,2).'-'.substr($phone,6,2);
     }
 
-  return  $phonen;
+  return  $phoned;
   }
+
 
 
 
@@ -473,6 +505,7 @@ function pend($n, $r='') {
     elseif ($r == 'yeara') $e = array('лет',  'года', 'лет');  // родительный падеж
     elseif ($r == 'mid')   $e = array('й',    'е',    'я');
     elseif ($r == '1')     $e = array('ь',    'я',    'и');
+    elseif ($r == '2')     $e = array('ов',   '',     'а');
     elseif ($r == 'daya')  $e = array('дней', 'день', 'дня');  // родительный падеж
     else                   $e = array('',     '',     '');
     }

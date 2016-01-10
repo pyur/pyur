@@ -71,6 +71,10 @@ $db_store = array(
   17 => array('Стройдепо', '#00f'),
   18 => array('M-Видео', '#00f'),
   19 => array('Компьютер-Центр', '#00f'),
+  20 => array('Best-hoster', '#00f'),
+  21 => array('Aliexpress', '#00f'),
+  22 => array('рац', '#00f'),
+  23 => array('Лукойл', '#00f'),
 
   //99 => array('прочее', '#f00'),
   );
@@ -769,7 +773,7 @@ if ($act == 'ede' && p('edit') ) {
   b('<tr><td>');
   b('Файл:');
   b('<td>');
-  b('<input name="f_ed_file" type="file" size="60">');  // onchange="submit();"
+  b('<input name="f_ed_file" type="file" size="60" onchange="this.form.onsubmit();">');
 
 
   b('</table>');

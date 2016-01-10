@@ -119,6 +119,7 @@ if (!$ajax) {
   echo '<meta charset="UTF-8">';
   if ($redirect)  echo '<meta http-equiv="Refresh" content="0; url='.$redirect.'">';
   echo '<meta name="robots" content="none">';
+  echo '<meta http-equiv="cache-control" content="no-store">';
   echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">';
   echo '<link rel="StyleSheet" type="text/css" href="/s.css">';
   echo '<script type="text/javascript" src="/j.js"></script>';

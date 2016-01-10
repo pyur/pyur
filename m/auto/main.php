@@ -1,13 +1,13 @@
 <?php
 
 /************************************************************************/
-/*  Электричество  v1.oo                                                */
+/*  Автомобиль  v1.oo                                                   */
 /************************************************************************/
 
 
 if (!isset($body))  die ('error: this is a pluggable module and cannot be used standalone.');
 
-$gelc = getn('elc');
+$gaut = getn('aut');
 
 $gdate = gets('date', $curr['date']);
 $gyear = gets('year', $curr['year']);
@@ -23,25 +23,22 @@ if (!$act) {
   $gmon = datee($gdate,'m');
   $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
 
-  $where = array(
-    '`elec`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-    '`elec`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-    );
+  $where = array('`auto`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+                 '`auto`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
+                 );
 
-  $elec = db_read(array(
-    'table' => 'elec',
-    'col' => array('id', 'dt', 'val', 'desc'),
-    'where' => $where,
-    'order' => '`dt`',
-    'key' => 'id',
-    ));
+  $auto = db_read(array('table' => 'auto',
+                        'col' => array('id', 'dt', 'val', 'desc'),
+                        'where' => $where,
+                        'order' => '`dt`',
+                        'key' => 'id',
+                        ));
 
-  $prev = db_read(array(
-    'table' => 'elec',
-    'col' => 'val',
-    'where' => '`elec`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-    'order' => '`dt` DESC',
-    ));
+  $prev = db_read(array('table' => 'auto',
+                        'col' => 'val',
+                        'where' => '`auto`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+                        'order' => '`dt` DESC',
+                        ));
 
 
 
@@ -56,13 +53,15 @@ if (!$act) {
 
   $submenu['Календарь;calendar-select'] = '/'.$mod.'/cdr/';
 
-  if (p('edit'))  $submenu['Добавить;plus-button'] = '/'.$mod.'/ele/';
+  if (p('edit'))  $submenu['Добавить;plus-button'] = '/'.$mod.'/aue/';
   submenu();
 
     // ---- end: submenu ---- //
 
 
     b('<style type="text/css">
+<!--
+
 @media (max-width: 1339px) {
 #chart {width: 1300px;  height: 300px;}
 }
@@ -82,32 +81,38 @@ if (!$act) {
 @media (min-width: 2500px) {
 #chart {width: 1300px;  height: 300px;}
 }
+-->
 </style>
 ');
 
 
 
-  b('<p class="h1">Электричество ('.substr('00'.$gmon,-2,2).'.'.$gyear.')</p>');
+
+  b('<p class="h1">Пробег ('.substr('00'.$gmon,-2,2).'.'.$gyear.')</p>');
   b();
 
 
-  if ($elec) {
+  if ($auto) {
     b('<div id="chart"></div>');
     b();
 
-    css_table(array(140, 70, 50, 320, 18));
+    css_table(array(140, 50, 30, 320, 18));
     icona(array('pencil-button'));
 
     b('<table class="lst f10">');
     b('<tr>');
     b('<td>Дата, время');
-    b('<td>Значение');
-    b('<td>Расход');
+    b('<td>Пробег');
+    b('<td>Км.');
     b('<td>Примечание');
     b('<td>Д.');
 
     $chart = array();
-    foreach ($elec as $k=>$v) {
+    for ($i = 1; $i < 32; $i++) {
+      $chart[$i] = 0;
+      }
+
+    foreach ($auto as $k=>$v) {
 
       b('<tr>');
 
@@ -116,19 +121,16 @@ if (!$act) {
 
 
       b('<td>');
-      b(substr($v['val'],0,-1));
-
-      b('<span style="color: red;">');
-      b(substr($v['val'],-1,1));
-      b('</span>');
+      b($v['val']);
 
 
       b('<td>');
       if ($prev)  $diff = $v['val'] - $prev;  else $diff = 0;
-      b(substr($diff,0,-1));
-      b(',');
-      b(substr($diff,-1,1));
-      $chart[] = $diff/10;
+      b($diff);
+      //b(substr($diff,0,-1));
+      //b(',');
+      //b(substr($diff,-1,1));
+      $chart[datee($v['dt'],'d')] = $diff/10;
 
 
       b('<td>');
@@ -136,7 +138,7 @@ if (!$act) {
 
 
       b('<td>');
-      if (p('edit'))  b(icona('/'.$mod.'/ele/?elc='.$k));
+      if (p('edit'))  b(icona('/'.$mod.'/aue/?aut='.$k));
 
 
       $prev = $v['val'];
@@ -153,7 +155,7 @@ if (!$act) {
 
   b('
 var ch = new $chart("chart");
-ch.elec(['.implode(',',$chart).']);
+ch.auto(['.implode(',',$chart).']);
 ');
   b('</script>');
     }
@@ -169,45 +171,42 @@ ch.elec(['.implode(',',$chart).']);
 
 
 
-  // ---------------------------------------------------- add / edit  elec --------------------------------------------------------- //
+  // ---------------------------------------------------- add / edit  auto --------------------------------------------------------- //
 
 
 
   // -------------------------- add / edit -------------------------- //
 
-if ($act == 'ele' && p('edit') ) {
+if ($act == 'aue' && p('edit') ) {
 
-  $elec = array(
-    'dt' => $curr['datetime'],
-    'val' => 0,
-    'desc' => '',
-    );
-  $elec['dt'][17] = '0';
-  $elec['dt'][18] = '0';
+  $auto = array('dt' => $curr['datetime'],
+                'val' => 0,
+                'desc' => '',
+                );
+  $auto['dt'][17] = '0';
+  $auto['dt'][18] = '0';
 
-  if ($gelc) {
+  if ($gaut) {
     $col = array();
-    foreach ($elec as $k=>$v)  $col[] = $k;
+    foreach ($auto as $k=>$v)  $col[] = $k;
 
-    $elec = db_read(array(
-      'table' => 'elec',
-      'col' => $col,
-      'where' => '`id` = '.$gelc,
-      ));
+    $auto = db_read(array('table' => 'auto',
+                          'col' => $col,
+                          'where' => '`id` = '.$gaut,
+                          ));
     }
   else {
-    $last = db_read(array(
-      'table' => 'elec',
-      'col' => 'val',
-      'order' => '`dt` DESC',
-      ));
+    $last = db_read(array('table' => 'auto',
+                          'col' => 'val',
+                          'order' => '`dt` DESC',
+                          ));
 
-    $elec['val'] = $last;
+    $auto['val'] = $last;
     }
 
 
-    // ---- submenu ---- //                               // '/'.$mod.'/elu/?elc='.$gelc;
-  if (p() && $gelc)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/elu/?elc='.$gelc));  // , '#Нет;cross-button' => ''
+    // ---- submenu ---- //                               // '/'.$mod.'/auu/?aut='.$gaut;
+  if (p() && $gaut)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/auu/?aut='.$gaut));  // , '#Нет;cross-button' => ''
   submenu();
     // ---- end: submenu ---- //
 
@@ -215,15 +214,15 @@ if ($act == 'ele' && p('edit') ) {
 
 
   b('<p class="h1">');
-  if (!$gelc)  b('Добавление');
+  if (!$gaut)  b('Добавление');
   else         b('Редактирование');
   b('</p>');
   b();
 
 
-  b(form('elec', '/'.$mod.'/elu/', array(
-    $gelc ? 'elc='.$gelc : '',
-    )));
+  b(form('auto', '/'.$mod.'/auu/?'
+    .($gaut ? '&aut='.$gaut : '')
+    ));
 
   b('<table class="edt">');
 
@@ -231,19 +230,19 @@ if ($act == 'ele' && p('edit') ) {
   b('<tr><td>');
   b('Дата, время:');
   b('<td>');
-  b(form_dt(array('f_elec_date_y;2000', 'f_elec_date_m', 'f_elec_date_d', 'f_elec_date_h', 'f_elec_date_i', 'f_elec_date_s'),  $elec['dt'] ));
+  b(form_dt(array('f_auto_date_y;2000', 'f_auto_date_m', 'f_auto_date_d', 'f_auto_date_h', 'f_auto_date_i', 'f_auto_date_s'),  $auto['dt'] ));
 
 
   b('<tr><td>');
   b('Показание:');
   b('<td>');
-  b(form_n('@f_elec_val', $elec['val'], 80));
+  b(form_n('@f_auto_val', $auto['val'], 80));
 
 
   b('<tr><td>');
   b('Описание:');
   b('<td>');
-  b(form_t('f_elec_desc', $elec['desc'], 300));
+  b(form_t('f_auto_desc', $auto['desc'], 300));
 
 
   b('</table>');
@@ -258,28 +257,27 @@ if ($act == 'ele' && p('edit') ) {
 
   // ------------------------------------------- ajax: update ------------------------------------------------ //
 
-if ($act == 'elu' && p('edit') ) {
+if ($act == 'auu' && p('edit') ) {
   $ajax = TRUE;
-  //http_response_code(418);
 
-  $post = postb('f_elec_desc');
+  $post = postb('f_auto_desc');
 
-  $table = 'elec';
-  $where = '`id` = '.$gelc;
+  $table = 'auto';
+  $where = '`id` = '.$gaut;
 
 
   if ($post) {
     $set = array();
-    $set['dt'] = datesql(postn('f_elec_date_y'), postn('f_elec_date_m'), postn('f_elec_date_d'), postn('f_elec_date_h'), postn('f_elec_date_i'), postn('f_elec_date_s'));
-    $set['val'] = postn('f_elec_val');
-    $set['desc'] = post('f_elec_desc');
+    $set['dt'] = datesql(postn('f_auto_date_y'), postn('f_auto_date_m'), postn('f_auto_date_d'), postn('f_auto_date_h'), postn('f_auto_date_i'), postn('f_auto_date_s'));
+    $set['val'] = postn('f_auto_val');
+    $set['desc'] = post('f_auto_desc');
 
-    if ($gelc) {
+    if ($gaut) {
       db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
       }
 
     else {
-      $gelc = db_write(array('table'=>$table, 'set'=>$set));
+      $gaut = db_write(array('table'=>$table, 'set'=>$set));
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -287,16 +285,18 @@ if ($act == 'elu' && p('edit') ) {
 
 
     // ---- deletion ---- //
-  if (!$post && $gelc && p()) {
-    $pdate = db_read(array(
-      'table' => $table,
-      'col' => '!DATE(`dt`)',
-      'where' => $where,
-      ));
+  if (!$post && $gaut && p()) {
+    $pdate = db_read(array('table' => 'auto',
+                           'col' => '!DATE(`dt`)',
+                           'where' => $where,
+                           ));
 
     $result = db_write(array('table'=>$table, 'where'=>$where));
 
     b('/'.$mod.'/?date='.$pdate);
+
+    //http_response_code(418);
+    //b('failed');
     }  // end: delete
 
   }
@@ -376,94 +376,6 @@ if ($act == 'cdr') {
     }
 
   b('</table>');
-  }
-
-
-
-
-  // -------------------------------- remote client read -------------------------------- //
-
-if ($act == 'rr') {
-  $ajax = TRUE;
-
-  $raw_post = file_get_contents("php://input");
-  fwrite (fopen ('m/'.$mod.'/debug/debug '.time(), 'wb'),  $raw_post);  clearstatcache();
-
-
-  $rq = json_decode($raw_post, TRUE);
-  $aw = array();
-
-    // ---------------- validate query ---------------- //
-
-  if (!isset($rq['table'])) {
-    $rq['table'] = 'elec';
-    }
-
-  if ($rq['table'] != 'elec') {
-    $aw['result'] = 'error';
-    $aw['error'] = 'table access not allowed';
-
-    b(json_encode($aw));
-    exit();
-    }
-
-
-    // ---------------- execute query ---------------- //
-
-  //$gyear = datee($rq['date']);
-  //$gmon = datee($rq['date'],'m');
-  //$gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
-  //
-  //$where = array('`elec`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-  //               '`elec`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-  //               );
-
-  $where = $rq['where'];
-  foreach ($rq['wherea'] as $v) {
-    $param = strtr($v, array('\''=>'\'\''));
-
-    if (($posb = strpos($where,'?')) !== FALSE) {
-      $where = substr($where,0,$posb) . '\'' . $param . '\'' . substr($where,($posb+1));
-      }
-    }
-
-  $row = db_read(array('table' => $rq['table'],
-                       'col' => $rq['col'],  // array('id', 'dt', 'val', 'desc'),
-                       'where' => $where,
-                       'order' => (isset($rq['order']) ? $rq['order'] : ''),
-                       'key' => (isset($rq['key']) ? $rq['key'] : NULL),
-                       ));
-
-
-    // ---------------- format answer ---------------- //
-
-  if ($row) {
-    $aw['rows'] = array();
-    foreach ($row as $k=>$v) {
-      $cols = array();
-      foreach ($v as $kk=>$vv) {
-        $cols[] = $vv;
-        }
-      $aw['rows'][] = $cols;
-      }
-
-    $aw['result'] = 'ok';
-    }
-
-  else {
-    $aw['result'] = 'error';
-    $aw['error'] = 'empty result';
-    }
-
-
-
-  //else {
-  //  $aw['result'] = 'error';
-  //  $aw['error'] = 'no date provided';
-  //  }
-
-
-  b(json_encode($aw));
   }
 
 

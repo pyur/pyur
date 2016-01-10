@@ -1,7 +1,7 @@
 <?php
 
 /************************************************************************/
-/*  functions & constants v2.oo                                         */
+/*  functions & constants v2.1o                                         */
 /************************************************************************/
 
 
@@ -52,6 +52,7 @@ function d ($var) {
     echo '<td style="border: 1px solid #000;  padding: 0 4px;  white-space: pre;">';
     if (is_string($var))   echo 'String ('.mb_strlen($var).')';
     elseif (is_int($var))  echo 'Integer';
+    else   echo gettype($var);
     echo '<td style="border: 1px solid #000;  padding: 0 4px;  width: 100%;">';
     echo htmlspecialchars($var);
     echo '</table>';

@@ -11,6 +11,10 @@ $gid = getn('id',1);
 $gppl = getn('ppl');
 //$gfce = getn('fce',1);
 $gjnc = getn('jnc');
+$gphn = getn('phn');
+$gadr = getn('adr');
+$ggrp = getn('grp');
+$ggpp = getn('gpp');
 
 $gdate = gets('date', $curr['date']);
 $gyear = gets('year', $curr['year']);
@@ -32,6 +36,12 @@ if ($act == 'a') {
 
 
 if (!$act) {
+
+  $pgroup = db_read(array(
+    'table' => 'pgroup',
+    'col' => array('id', 'desc'),
+    'key' => 'id',
+    ));
 
   if ($ajax) {
     $pfio = post('fio');
@@ -64,17 +74,16 @@ if (!$act) {
     }
 
   $people = db_read(array('table' => array('people', 'people_junc'),
-                          'col' => array('people`.`id', 'people`.`surname', 'people`.`name', 'people`.`otchestvo', 'people`.`surnamef', 'people`.`nickname', 'people`.`birthdate', 'people`.`addr', 'people`.`phone', 'people`.`vk', 'people`.`ok', 'people`.`fb',
-                                         'people`.`lat', 'people`.`lon',
-                                         ),
+                          'col' => array('people`.`id', 'people`.`surname', 'people`.`name', 'people`.`otchestvo', 'people`.`surnamef', 'people`.`nickname', 'people`.`birthdate', 'people`.`deathdate', 'people`.`vk', 'people`.`ok', 'people`.`fb'),
                           'where' => $where,
                           'order' => array('`people`.`surname`', '`people`.`name`', '`people`.`otchestvo`'),
                           'key' => 'id',
                           ));
 
 
+    // ---- lame read_all ---- //
   $people_junc = db_read(array('table' => 'people_junc',
-                               'col' => array('people_junc`.`id', 'people_junc`.`f', 'people_junc`.`t', 'people_junc`.`know', 'people_junc`.`rel', 'people_junc`.`symp', 'people_junc`.`misc'),
+                               'col' => array('people_junc`.`id', 'people_junc`.`f', 'people_junc`.`t', 'people_junc`.`rel', 'people_junc`.`misc'),  // , 'people_junc`.`know', 'people_junc`.`symp'
                                'where' => '`people_junc`.`f` = '.$gid,
                                'key' => 't',
                                ));
@@ -85,12 +94,36 @@ if (!$act) {
   //                               'key' => array('t', 'id'),
   //                               ));
 
+    // ---- lame read_all ---- //
+  $people_phone = db_read(array('table' => array('people', 'phone'),
+                                'col' => array('phone`.`id', 'phone`.`pid', 'phone`.`num', 'phone`.`desc'),
+                                'where' => '`people`.`id` = `phone`.`pid`',
+                                'key' => array('pid', 'id'),
+                                ));
+
+
+    // ---- lame read_all ---- //
+  $people_addr = db_read(array('table' => array('people', 'people_addr'),
+                               'col' => array('people_addr`.`id', 'people_addr`.`pid', 'people_addr`.`addr', 'people_addr`.`lat', 'people_addr`.`lon'),
+                               'where' => '`people`.`id` = `people_addr`.`pid`',
+                               'key' => array('pid', 'id'),
+                               ));
+
+
+    // ---- lame read_all ---- //
+  $people_group = db_read(array('table' => array('people', 'people_group'),
+                                'col' => array('people_group`.`id', 'people_group`.`people', 'people_group`.`group'),
+                                'where' => '`people`.`id` = `people_group`.`people`',
+                                'key' => array('people', 'id'),
+                                ));
+
 
   if (!$ajax) {
       // ---- submenu ---- //
     if (p('edit'))  $submenu['Добавить человека;user-green--plus'] = '/'.$mod.'/ppe/?id='.$gid;
     if (p('edit'))  $submenu['Редактировать;user-green--pencil'] = '/'.$mod.'/ppe/?id='.$gid.'&ppl='.$gid;
     //if (p('edit'))  $submenu['Добавить связь'] = '/'.$mod.'/jne/?id='.$gid;
+    if (p('edit'))  $submenu['Группы;users'] = '/'.$mod.'/grp/';
     $submenu['#Фильтр;funnel'] = 'var a = $.id(\'flt\');  if (a.style.display == \'none\') {a.style.display=\'block\'; $.id(\'flt_fio\').focus();}  else a.style.display=\'none\'';
     submenu();
 
@@ -114,17 +147,27 @@ if (!$act) {
     }
 
   if ($people) {
+    $icona = array();
+    $icona[] = 'user-green--pencil';
+    $icona[] = 'home--plus';
+    $icona[] = 'telephone--plus';
+    $icona[] = 'users--plus';
+    $icona[] = 'user-green--chain';
+    $icona[] = 'table';
+    $icw = count($icona) *18;
+    $icv = count($icona) *18;
+
     css_table(array(
       //'#' => array(),
-      0    => array('f7', 160, 60, 160, 60, 60, 120, 86, 54),
-      1024 => array('f8', 190, 70, 180, 70, 70, 140, 176, 54),
-      1280 => array('f10', 230, 80, 200, 100, 100, 200, 162, 54),
-      1366 => array('f10', 230, 80, 200, 100, 100, 200, 342, 54),
-      1600 => array('f10', 230, 80, 200, 100, 100, 200, 542, 54),
-      1920 => array('f12', 280, 100, 400, 120, 120, 240, 546, 54),
-      2560 => array('f12', 280, 100, 400, 120, 120, 240, 546, 54),
+      0    => array('f7',  160, 60,  280, 120, 152-$icv, $icw),
+      1024 => array('f8',  190, 70,  320, 140, 242-$icv, $icw),
+      1280 => array('f10', 230, 80,  400, 200, 226-$icv, $icw),
+      1366 => array('f10', 230, 80,  400, 200, 404-$icv, $icw),
+      1600 => array('f10', 230, 80,  400, 200, 608-$icv, $icw),
+      1920 => array('f12', 280, 100, 640, 240, 612-$icv, $icw),
+      2560 => array('f12', 280, 100, 640, 240, 612-$icv, $icw),
       ));
-    icona(array('user-green--pencil','user-green--chain','table'));
+    icona($icona);
 
     b('<table class="lst">');  // id="people_table"
 
@@ -132,8 +175,8 @@ if (!$act) {
     b('<td>Ф.И.О.');
     b('<td>Дата рожд.');
     b('<td>Адрес, Телефон, ВК, ОК, ФБ');
-    b('<td>Глуб. знаком.');
-    b('<td>Симпатия');
+    //b('<td>Глуб. знаком.');
+    //b('<td>Симпатия');
     b('<td>Степень отношений');
     b('<td id="misc">Откуда знаю');
     b('<td>Д.');
@@ -152,51 +195,76 @@ if (!$act) {
       b('<td>');
       //if (p('edit'))  b('<a href="/'.$mod.'/ppe/?id='.$gid.'&ppl='.$k.'">');
       b(dateh($v['birthdate']));
+      if ($v['deathdate'] != '0000-00-00')  b('<br>'.dateh($v['deathdate']));
       //if (p('edit'))  b('</a>');
 
 
       b('<td>');
       $tmp = array();
-      $addr = $v['addr'];
-      if ($v['lat']) {
-        if (!$addr)  $addr = '@';
-        // http://www.openstreetmap.org/?mlat=51.34187&mlon=37.89237#map=17/51.34187/37.89237
-        //$addr = '<a href="https://href.li/?http://www.openstreetmap.org/?mlat='.geoaf($v['lat']).'&mlon='.geoof($v['lon']).'#map=17/'.geoaf($v['lat']).'/'.geoof($v['lon']).'" target="_blank">'.$addr.'</a>';
-        $addr = '<a href="/'.$mod.'/mpv/?ppl='.$k.'" target="_blank">'.$addr.'</a>';
+
+      //$addr = $v['addr'];
+      //if ($v['lat']) {
+      //  if (!$addr)  $addr = '@';
+      //  // http://www.openstreetmap.org/?mlat=51.34187&mlon=37.89237#map=17/51.34187/37.89237
+      //  //$addr = '<a href="https://href.li/?http://www.openstreetmap.org/?mlat='.geoaf($v['lat']).'&mlon='.geoof($v['lon']).'#map=17/'.geoaf($v['lat']).'/'.geoof($v['lon']).'" target="_blank">'.$addr.'</a>';
+      //  $addr = '<a style="color: orange;" href="/'.$mod.'/mpv/?ppl='.$k.'" target="_blank">'.$addr.'</a>';
+      //  }
+      //if ($addr)  $tmp[] = '<span style="color: magenta;">'.$addr.'</span>';
+
+      if (isset($people_addr[$k])) {
+        foreach ($people_addr[$k] as $kk=>$vv) {
+          $addr = '<a href="/'.$mod.'/ade/?id='.$gid.'&adr='.$kk.'">'.($vv['addr'] ? $vv['addr'] : '#').'</a>';
+          if ($vv['lat'])  $addr .= ' <a href="/'.$mod.'/mpv/?adr='.$kk.'" target="_blank">@</a>';
+          $tmp[] = $addr;
+          }
         }
-      if ($addr)  $tmp[] = $addr;
-      if ($v['phone'])  $tmp[] = $v['phone'];
+
+      //if ($v['phone'])  $tmp[] = '<span style="color: red;">'.$v['phone'].'</span>';
+      if (isset($people_phone[$k])) {
+        foreach ($people_phone[$k] as $kk=>$vv)  $tmp[] = '<a href="/'.$mod.'/phe/?id='.$gid.'&phn='.$kk.'">'.phoned($vv['num']).($vv['desc'] ? ' ('.$vv['desc'].')' : '').'</a>';
+        }
+
       if ($v['vk'])  $tmp[] = 'vk: '.'<a href="https://href.li/?http://vk.com/id'.$v['vk'].'" target="_blank">'.$v['vk'].'</a>';
       if ($v['ok'])  $tmp[] = 'ok: '.'<a href="https://href.li/?http://ok.ru/profile/'.$v['ok'].'" target="_blank">'.$v['ok'].'</a>';
       if ($v['fb'])  $tmp[] = 'fb: '.'<a href="https://href.li/?https://www.facebook.com/profile.php?id='.$v['fb'].'" target="_blank">'.$v['fb'].'</a>';
       if ($tmp)  b(implode(', ', $tmp));
 
 
-      b('<td>');
-      if (isset($people_junc[$k])) {
-        //b($db_people_know[$people_junc[$k]['know']]);
-        //$w1 = round($people_junc[$k]['know'],1);
-        $w1 = $people_junc[$k]['know'];
-        $w2 = 100 - $w1;
-
-        b('<div style="height: 8px;  border-radius: 5px;  overflow: hidden;">');  //   border: 1px solid #888;  
-        b('<div style="display: inline-block;  height: 100%; width:'.$w2.'%;  vertical-align: top;  background-color: #8f8;  box-shadow: inset #fff 1px 2px 4px -1px, inset #000 -1px -2px 6px -2px, #000 0 0 6px -2px;"></div>');   // background: linear-gradient(to bottom, #f2f6f8 0%, #d8e1e7 50%, #b5c6d0 51%, #e0eff9 100%);
-        b('<div style="display: inline-block;  height: 100%; width:'.$w1.'%;  vertical-align: top;  background-color: #faa;  box-shadow: inset #fff 1px 2px 4px -1px, inset #000 -1px -2px 6px -2px, #000 0 0 6px -2px;"></div>');
-        b('</div>');
-        }
+      //b('<td>');
+      //if (isset($people_phone[$k])) {
+      //  $tmp = array();
+      //  foreach ($people_phone[$k] as $kk=>$vv) {
+      //    $tmp[] = $vv['num'];
+      //    }
+      //  b(implode(', ', $tmp));
+      //  }
 
 
-      b('<td>');
-      //if (isset($people_junc[$k]))  b($db_people_symp[$people_junc[$k]['symp']]);
-      if (isset($people_junc[$k])) {
-        $w1 = $people_junc[$k]['symp'];
-        $w2 = 100 - $w1;
+      //b('<td>');
+      //if (isset($people_junc[$k])) {
+      //  //b($db_people_know[$people_junc[$k]['know']]);
+      //  //$w1 = round($people_junc[$k]['know'],1);
+      //  $w1 = $people_junc[$k]['know'];
+      //  $w2 = 100 - $w1;
+      //
+      //  b('<div style="height: 8px;  border-radius: 5px;  overflow: hidden;">');  //   border: 1px solid #888;  
+      //  b('<div style="display: inline-block;  height: 100%; width:'.$w2.'%;  vertical-align: top;  background-color: #8f8;  box-shadow: inset #fff 1px 2px 4px -1px, inset #000 -1px -2px 6px -2px, #000 0 0 6px -2px;"></div>');   // background: linear-gradient(to bottom, #f2f6f8 0%, #d8e1e7 50%, #b5c6d0 51%, #e0eff9 100%);
+      //  b('<div style="display: inline-block;  height: 100%; width:'.$w1.'%;  vertical-align: top;  background-color: #faa;  box-shadow: inset #fff 1px 2px 4px -1px, inset #000 -1px -2px 6px -2px, #000 0 0 6px -2px;"></div>');
+      //  b('</div>');
+      //  }
 
-        b('<div style="height: 8px;  border: 1px solid #888;  border-radius: 5px;  overflow: hidden;">');
-        b('<div style="display: inline-block;  height: 100%; width:'.$w2.'%;  vertical-align: top;  background-color: #8f8;"></div>');
-        b('<div style="display: inline-block;  height: 100%; width:'.$w1.'%;  vertical-align: top;  background-color: #faa;"></div>');
-        b('</div>');
-        }
+
+      //b('<td>');
+      ////if (isset($people_junc[$k]))  b($db_people_symp[$people_junc[$k]['symp']]);
+      //if (isset($people_junc[$k])) {
+      //  $w1 = $people_junc[$k]['symp'];
+      //  $w2 = 100 - $w1;
+      //
+      //  b('<div style="height: 8px;  border: 1px solid #888;  border-radius: 5px;  overflow: hidden;">');
+      //  b('<div style="display: inline-block;  height: 100%; width:'.$w2.'%;  vertical-align: top;  background-color: #8f8;"></div>');
+      //  b('<div style="display: inline-block;  height: 100%; width:'.$w1.'%;  vertical-align: top;  background-color: #faa;"></div>');
+      //  b('</div>');
+      //  }
 
 
       b('<td>');
@@ -205,14 +273,23 @@ if (!$act) {
 
       //b('<td onclick="$.tdl(this)">');
       b('<td>');
-      //if (isset($people_junc[$k]) && $people_junc_c[$k])  b('['.count($people_junc_c[$k]).'] ');
-      //if (p('edit'))  b('<a href="/'.$mod.'/jne/?id='.$gid.'&ppl='.$k.'">');
-      if (isset($people_junc[$k]))  b($people_junc[$k]['misc']);
-      //if (p('edit'))  b('</a>');
+      $tmp = array();
+
+      if (isset($people_group[$k])) {
+        foreach ($people_group[$k] as $kk=>$vv) {
+          $tmp[] = '<a href="/'.$mod.'/gpe/?id='.$gid.'&gpp='.$kk.'">'.$pgroup[$vv['group']]['desc'].'</a>';
+          }
+        }
+
+      if (isset($people_junc[$k]) && $people_junc[$k]['misc'])  $tmp[] = $people_junc[$k]['misc'];
+      if ($tmp)  b(implode(', ', $tmp));
 
 
       b('<td>');
       if (p('edit'))  b(icona('/'.$mod.'/ppe/?id='.$gid.'&ppl='.$k));
+      if (p('edit'))  b(icona('/'.$mod.'/ade/?id='.$gid.'&ppl='.$k));
+      if (p('edit'))  b(icona('/'.$mod.'/phe/?id='.$gid.'&ppl='.$k));
+      if (p('edit'))  b(icona('/'.$mod.'/gpe/?id='.$gid.'&ppl='.$k));
       if (p('edit'))  b(icona('/'.$mod.'/jne/?id='.$gid.'&ppl='.$k));
       if (p('edit'))  b(icona('!/'.$mod.'/pgr/?ppl='.$k));
       }
@@ -276,29 +353,28 @@ if (!$act) {
 
 if ($act == 'ppe' && p('edit') ) {
 
-  $people = array('surname' => '',
-                  'name' => '',
-                  'otchestvo' => '',
-                  'surnamef' => '',
-                  'nickname' => '',
-                  'birthdate' => '0000-00-00',
-                  'addr' => '',
-                  'lat' => 0,
-                  'lon' => 0,
-                  'phone' => '',
-                  'vk' => '',
-                  'ok' => '',
-                  'fb' => '',
-                  );
+  $people = array(
+    'surname' => '',
+    'name' => '',
+    'otchestvo' => '',
+    'surnamef' => '',
+    'nickname' => '',
+    'birthdate' => '0000-00-00',
+    'deathdate' => '0000-00-00',
+    'vk' => '',
+    'ok' => '',
+    'fb' => '',
+    );
 
   if ($gppl) {
     $col = array();
     foreach ($people as $k=>$v)  $col[] = $k;
 
-    $people = db_read(array('table' => 'people',
-                            'col' => $col,
-                            'where' => '`id` = '.$gppl,
-                            ));
+    $people = db_read(array(
+      'table' => 'people',
+      'col' => $col,
+      'where' => '`id` = '.$gppl,
+      ));
     }
 
 
@@ -318,9 +394,10 @@ if ($act == 'ppe' && p('edit') ) {
   b();
 
 
-  b(form('people', '/'.$mod.'/ppu/?id='.$gid
-    .($gppl ? '&ppl='.$gppl : '')
-    ));
+  b(form('people', '/'.$mod.'/ppu/', array(
+    'id='.$gid,
+    $gppl ? 'ppl='.$gppl : '',
+    )));
 
   b('<table class="edt">');
 
@@ -347,18 +424,24 @@ if ($act == 'ppe' && p('edit') ) {
 
 
   b('<tr><td>');
-  b('Адрес:');
+  b('Дата смерти:');
   b('<td>');
-  b(form_t('f_people_addr', $people['addr'], 500));
-  b(' '.form_t('f_lat,lat', ($people['lat'] ? geoaf($people['lat']) : ''), 90));
-  b(' '.form_t('f_lon,lon', ($people['lon'] ? geoof($people['lon']) : ''), 90));
-  b(' <input type="button" style="width: 20px; height: 20px; padding: 0;" value="O" onclick="window.open(\'/people/mpc/\');">');
+  b(form_dt(array('!f_people_ddate_y;1930', '!f_people_ddate_m', '!f_people_ddate_d'),  $people['deathdate'] ));
 
 
-  b('<tr><td>');
-  b('Телефон:');
-  b('<td>');
-  b(form_t('f_people_phone', $people['phone'], 500));
+  //b('<tr><td>');
+  //b('Адрес:');
+  //b('<td>');
+  //b(form_t('f_people_addr', $people['addr'], 500));
+  //b(' '.form_t('f_lat,lat', ($people['lat'] ? geoaf($people['lat']) : ''), 90));
+  //b(' '.form_t('f_lon,lon', ($people['lon'] ? geoof($people['lon']) : ''), 90));
+  //b(' <input type="button" style="width: 20px; height: 20px; padding: 0;" value="O" onclick="window.open(\'/people/mpc/\');">');
+
+
+  //b('<tr><td>');
+  //b('Телефон:');
+  //b('<td>');
+  //b(form_t('f_people_phone', $people['phone'], 500));
 
 
   b('<tr><td>');
@@ -415,12 +498,13 @@ if ($act == 'ppu' && p('edit') ) {
     $set['otchestvo'] = post('f_people_otchestvo');
     $set['surnamef'] = post('f_people_surnamef');
     $set['nickname'] = post('f_people_nickname');
-    $set['birthdate'] = datesql(postn('f_people_date_y'), postn('f_people_date_m'), postn('f_people_date_d'), postn('f_people_date_h'), postn('f_people_date_i'), postn('f_people_date_s'));
-    $set['addr'] = post('f_people_addr');
-    //$geo = geoi(post('f_people_lat'), post('f_people_lon'));
-    $set['lat'] = (post('f_lat') ? geoai(post('f_lat')) : 0);
-    $set['lon'] = (post('f_lon') ? geooi(post('f_lon')) : 0);
-    $set['phone'] = post('f_people_phone');
+    $set['birthdate'] = datesql(postn('f_people_date_y'), postn('f_people_date_m'), postn('f_people_date_d'));  // , postn('f_people_date_h'), postn('f_people_date_i'), postn('f_people_date_s')
+    $set['deathdate'] = datesql(postn('f_people_ddate_y'), postn('f_people_ddate_m'), postn('f_people_ddate_d'));
+    //$set['addr'] = post('f_people_addr');
+    ////$geo = geoi(post('f_people_lat'), post('f_people_lon'));
+    //$set['lat'] = (post('f_lat') ? geoai(post('f_lat')) : 0);
+    //$set['lon'] = (post('f_lon') ? geooi(post('f_lon')) : 0);
+    //$set['phone'] = post('f_people_phone');
     $set['vk'] = post('f_people_vk');
     $set['ok'] = post('f_people_ok');
     $set['fb'] = post('f_people_fb');
@@ -457,35 +541,37 @@ if ($act == 'jne' && p('edit')) {
   if (!$gppl && $grow)  $gppl = $grow;
 
   if (!$gjnc && $gppl) {
-    $gjnc = (int)db_read(array('table' => 'people_junc',
-                               'col' => 'id',
-                               'where' => array('`f` = '.$gid,
-                                                '`t` = '.$gppl,
-                                                ),
-                               ));
+    $gjnc = (int)db_read(array(
+      'table' => 'people_junc',
+      'col' => 'id',
+      'where' => array(
+        '`f` = '.$gid,
+        '`t` = '.$gppl,
+        ),
+      ));
     }
 
 
-
-
-  $junc = db_read(array('table' => 'people_junc',
-                        'col' => array('id', 'f', 't', 'know', 'rel', 'symp', 'misc'),
-                        'where' => '`id` = '.$gjnc,
-                        ));
+  $junc = db_read(array(
+    'table' => 'people_junc',
+    'col' => array('id', 'f', 't', 'know', 'rel', 'symp', 'misc'),
+    'where' => '`id` = '.$gjnc,
+    ));
 
   if ($junc) {
     $gjnc = $junc['id'];
     }
 
   else {
-    $junc = array('id' => 0,
-                  'f' => $gid,
-                  't' => $gppl,
-                  'know' => 50,
-                  'rel' => 0,
-                  'symp' => 60,
-                  'misc' => '',
-                  );
+    $junc = array(
+      'id' => 0,
+      'f' => $gid,
+      't' => $gppl,
+      'know' => 50,
+      'rel' => 0,
+      'symp' => 60,
+      'misc' => '',
+      );
     }
 
 
@@ -506,9 +592,10 @@ if ($act == 'jne' && p('edit')) {
   b();
 
 
-  b(form('junc', '/'.$mod.'/jnu/?id='.$gid
-    .($gjnc ? '&jnc='.$gjnc : '')
-    ));
+  b(form('junc', '/'.$mod.'/jnu/', array(
+    'id='.$gid,
+    $gjnc ? 'jnc='.$gjnc : '',
+    )));
 
   b('<table class="edt">');
   b('<tr><td>');
@@ -718,12 +805,14 @@ if ($act == 'cf') {
   $psurname = filter_rlns(post('surname'));
   $pname = filter_rlns(post('name'));
 
-  $people = db_read(array('table' => 'people',
-                          'col' => 'id',
-                          'where' => array('`surname` = \''.$psurname.'\'',
-                                           '`name` = \''.$pname.'\'',
-                                           ),
-                          ));
+  $people = db_read(array(
+    'table' => 'people',
+    'col' => 'id',
+    'where' => array(
+      '`surname` = \''.$psurname.'\'',
+      '`name` = \''.$pname.'\'',
+      ),
+    ));
   if ($people)  b('1');
   }
 
@@ -750,14 +839,15 @@ if ($act == 'ts') {
     if (isset($gsch[1]))  $where[] = '`name` LIKE \''.$gsch[1].'%\'';
     if (isset($gsch[2]))  $where[] = '`otchestvo` LIKE \''.$gsch[2].'%\'';
 
-    $people = db_read(array('table' => 'people',
-                            'col' => array('id', 'surname', 'name', 'otchestvo'),
-                            'where' => $where,
-                            'order' => array('`surname`', '`name`', '`otchestvo`'),
-                            'limit' => '100',
+    $people = db_read(array(
+      'table' => 'people',
+      'col' => array('id', 'surname', 'name', 'otchestvo'),
+      'where' => $where,
+      'order' => array('`surname`', '`name`', '`otchestvo`'),
+      'limit' => '100',
 
-                            'key' => 'id',
-                            ));
+      'key' => 'id',
+      ));
 
 
       // -------------------------------- output -------------------------------- //
@@ -771,6 +861,534 @@ if ($act == 'ts') {
       }
     }
   } // end: act==ts
+
+
+
+
+  // ---------------------------------------------------- add / edit  addr --------------------------------------------------------- //
+
+  // -------------------------- add / edit -------------------------- //
+
+if ($act == 'ade' && p('edit') ) {
+
+  $addr = array(
+    'pid' => 0,
+    'addr' => '',
+    'lat' => 0,
+    'lon' => 0,
+    );
+
+  if ($gadr) {
+    $col = array();
+    foreach ($addr as $k=>$v)  $col[] = $k;
+
+    $addr = db_read(array(
+      'table' => 'people_addr',
+      'col' => $col,
+      'where' => '`id` = '.$gadr,
+      ));
+    }
+
+
+    // ---- submenu ---- //
+  if (p() && $gadr)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/adu/?adr='.$gadr));
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+
+  b('<p class="h1">');
+  if (!$gadr)  b('Добавление');
+  else         b('Редактирование');
+  b('</p>');
+  b();
+
+
+  b(form('addr', '/'.$mod.'/adu/', array(
+    $gadr ? 'adr='.$gadr : '',
+    $gppl ? 'ppl='.$gppl : '',
+    )));
+
+  b('<table class="edt">');
+
+
+  //b('<tr><td>');
+  //b('Дата, время:');
+  //b('<td>');
+  //b(form_dt(array('f_addr_date_y;2000', 'f_addr_date_m', 'f_addr_date_d', 'f_addr_date_h', 'f_addr_date_i', 'f_addr_date_s'),  $addr['dt'] ));
+
+
+  b('<tr><td>');
+  b('Адрес:');
+  b('<td>');
+  b(form_t('@f_addr', $addr['addr'], 500));
+  b(' '.form_t('f_lat,lat', ($addr['lat'] ? geoaf($addr['lat']) : ''), 90));
+  b(' '.form_t('f_lon,lon', ($addr['lon'] ? geoof($addr['lon']) : ''), 90));
+  b(' <input type="button" style="width: 20px; height: 20px; padding: 0;" value="O" onclick="window.open(\'/people/mpc/\');">');
+
+
+  b('</table>');
+
+
+  b(form_sb());
+  b('</form>');
+  }
+
+
+
+
+  // ------------------------------------------- ajax: update ------------------------------------------------ //
+
+if ($act == 'adu' && p('edit') ) {
+  $ajax = TRUE;
+
+  $post = postb('f_addr');
+
+  $table = 'people_addr';
+  $where = '`id` = '.$gadr;
+
+
+  if ($post) {
+    $set = array();
+    $set['addr'] = post('f_addr');
+    $set['lat'] = (post('f_lat') ? geoai(post('f_lat')) : 0);
+    $set['lon'] = (post('f_lon') ? geooi(post('f_lon')) : 0);
+
+    if ($gadr) {
+      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      }
+
+    elseif ($gppl) {
+      $set['pid'] = $gppl;
+      $gadr = db_write(array('table'=>$table, 'set'=>$set));
+      }
+
+    b('/'.$mod.'/');
+    }
+
+
+    // ---- deletion ---- //
+  if (!$post && $gadr && p()) {
+    $result = db_write(array('table'=>$table, 'where'=>$where));
+
+    b('/'.$mod.'/');
+
+    //http_response_code(418);
+    //b('failed');
+    }  // end: delete
+
+  }
+
+
+
+
+  // ---------------------------------------------------- add / edit  phone --------------------------------------------------------- //
+
+  // -------------------------- add / edit -------------------------- //
+
+if ($act == 'phe' && p('edit') ) {
+
+  $phone = array(
+    'pid' => 0,
+    'num' => '',
+    'desc' => '',
+    );
+
+  if ($gphn) {
+    $col = array();
+    foreach ($phone as $k=>$v)  $col[] = $k;
+
+    $phone = db_read(array(
+      'table' => 'phone',
+      'col' => $col,
+      'where' => '`id` = '.$gphn,
+      ));
+    }
+
+
+    // ---- submenu ---- //
+  if (p() && $gphn)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/phu/?phn='.$gphn));
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+
+  b('<p class="h1">');
+  if (!$gphn)  b('Добавление');
+  else         b('Редактирование');
+  b('</p>');
+  b();
+
+
+  b(form('phone', '/'.$mod.'/phu/', array(
+    $gphn ? 'phn='.$gphn : '',
+    $gppl ? 'ppl='.$gppl : '',
+    )));
+
+  b('<table class="edt">');
+
+
+  //b('<tr><td>');
+  //b('Дата, время:');
+  //b('<td>');
+  //b(form_dt(array('f_phone_date_y;2000', 'f_phone_date_m', 'f_phone_date_d', 'f_phone_date_h', 'f_phone_date_i', 'f_phone_date_s'),  $phone['dt'] ));
+
+
+  b('<tr><td>');
+  b('Номер:');
+  b('<td>');
+  b(form_t('@f_phone_num', $phone['num'], 80));
+
+
+  b('<tr><td>');
+  b('Описание:');
+  b('<td>');
+  b(form_t('f_phone_desc', $phone['desc'], 300));
+
+
+  b('</table>');
+
+
+  b(form_sb());
+  b('</form>');
+  }
+
+
+
+
+  // ------------------------------------------- ajax: update ------------------------------------------------ //
+
+if ($act == 'phu' && p('edit') ) {
+  $ajax = TRUE;
+
+  $post = postb('f_phone_num');
+
+  $table = 'phone';
+  $where = '`id` = '.$gphn;
+
+
+  if ($post) {
+    $set = array();
+    $set['num'] = post('f_phone_num');
+    $set['desc'] = post('f_phone_desc');
+
+    if ($gphn) {
+      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      }
+
+    elseif ($gppl) {
+      $set['pid'] = $gppl;
+      $gphn = db_write(array('table'=>$table, 'set'=>$set));
+      }
+
+    b('/'.$mod.'/');
+    }
+
+
+    // ---- deletion ---- //
+  if (!$post && $gphn && p()) {
+    $result = db_write(array('table'=>$table, 'where'=>$where));
+
+    b('/'.$mod.'/');
+
+    //http_response_code(418);
+    //b('failed');
+    }  // end: delete
+
+  }
+
+
+
+
+  // ------------------------------------------------------------------------------------------------------------------------------------------------- //
+  // ------------------------------------------------------------------ group ----------------------------------------------------------------------- //
+  // ------------------------------------------------------------------------------------------------------------------------------------------------- //
+
+if ($act == 'grp') {
+
+  $pgroup = db_read(array(
+    'table' => 'pgroup',
+    'col' => array('id', 'desc'),
+    'key' => 'id',
+    ));
+
+
+    // ---- submenu ---- //
+  $submenu['Добавить группу'] = '/'.$mod.'/gre/';
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+
+  b('<p class="h1">Группы</p>');
+  b();
+
+
+  if ($pgroup) {
+    $icona = array();
+    $icona[] = 'pencil-button';
+    $icw = count($icona) *18;
+    //$icv = count($icona) *18;
+
+    css_table(array(24, 200, $icw));
+    icona($icona);
+
+
+    b('<table class="lst">');
+    b('<tr>');
+    b('<td>id');
+    b('<td>desc');
+    b('<td>Д.');
+
+    foreach ($pgroup as $k=>$v) {
+      b('<tr>');
+
+      b('<td>');
+      b($k);
+
+
+      b('<td>');
+      b($v['desc']);
+
+
+      b('<td>');
+      b(icona('/'.$mod.'/gre/?grp='.$k));
+      }
+
+    b('</table>');
+    }
+
+  else {
+    b('<p class="p">Ошибка: данные отсутствуют.');
+    }
+
+  }
+
+
+
+
+  // ---------------------------------------------------- pgroup add / edit --------------------------------------------------------- //
+
+if ($act == 'gre' && p('edit') ) {
+
+  $pgroup = array(
+    'id' => 0,
+    'desc' => '',
+    );
+
+  if ($ggrp) {
+    $col = array();
+    foreach ($pgroup as $k=>$v)  $col[] = $k;
+
+    $pgroup = db_read(array(
+      'table' => 'pgroup',
+      'col' => $col,
+      'where' => '`id` = '.$ggrp,
+      ));
+    }
+
+
+    // ---- submenu ---- //
+  if (p() && $ggrp)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/gru/?grp='.$ggrp));
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+
+  b('<p class="h1">');
+  if (!$ggrp)  b('Добавление');
+  else         b('Редактирование');
+  b('</p>');
+  b();
+  b();
+
+
+  b(form('pgroup', '/'.$mod.'/gru/', array(
+    $ggrp ? 'grp='.$ggrp : '',
+    )));
+
+  b('<table class="edt">');
+
+  //b('<tr><td>');
+  //b('Вставить после:');
+  //b('<td>');
+  //b(form_s('f_pgr_tp', $ppgroup, $pgroup['tp']));
+
+
+  b('<tr><td>');
+  b('Описание:');
+  b('<td>');
+  b(form_t('@f_grp_desc', $pgroup['desc'], 150));
+
+
+  b('</table>');
+
+
+  b(form_sb());
+  b('</form>');
+  }
+
+
+
+
+  // ------------------------------------------- ajax: pgroup update ------------------------------------------------ //
+
+if ($act == 'gru' && p('edit') ) {
+  $ajax = TRUE;
+  //http_response_code(418);
+
+  $post = postb('f_grp_desc');
+
+  $table = 'pgroup';
+  $where = '`id` = '.$ggrp;
+
+  if ($post) {
+    $set = array();
+    $set['desc'] = post('f_grp_desc');
+
+    if ($ggrp) {
+      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      }
+
+    else {
+      $ggrp = db_write(array('table'=>$table, 'set'=>$set));
+      }
+
+    b('/'.$mod.'/grp/');
+    }
+
+
+    // ---- deletion ---- //
+  if (!$post && $ggrp && p()) {
+    $result = db_write(array('table'=>$table, 'where'=>$where));
+
+    b('/'.$mod.'/grp/');
+    }  // end: delete
+
+  }
+
+
+
+
+  // ---------------------------------------------------- people_group --------------------------------------------------------- //
+
+  // -------------------------- add / edit -------------------------- //
+
+if ($act == 'gpe' && p('edit') ) {
+
+  $pgroup = db_read(array(
+    'table' => 'pgroup',
+    'col' => array('id', 'desc'),
+    'key' => 'id',
+    ));
+
+  $people_group = array(
+    'id' => 0,
+    'people' => 0,
+    'group' => 0,
+    );
+
+  if ($ggpp) {
+    $col = array();
+    foreach ($people_group as $k=>$v)  $col[] = $k;
+
+    $people_group = db_read(array(
+      'table' => 'people_group',
+      'col' => $col,
+      'where' => '`id` = '.$ggpp,
+      ));
+    }
+
+  $people = db_read(array(
+    'table' => 'people',
+    'col' => array('id', 'surname', 'name', 'otchestvo'),
+    'where' => '`id` = '.($gppl ? $gppl : $people_group['people']),
+    ));
+
+
+    // ---- submenu ---- //
+  if (p() && $ggpp)  $submenu['?Удалить;minus-button'] = array('#Подтвердить;tick-button' => form_sbd('/'.$mod.'/gpu/?gpp='.$ggpp));
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+
+  b('<p class="h1">');
+  if (!$ggpp)  b('Добавление в группу');
+  else         b('Редактирование');
+  b(' – '.fiof($people['surname'], $people['name'], $people['otchestvo']));
+  b('</p>');
+  b();
+
+
+  b(form('people_group', '/'.$mod.'/gpu/', array(
+    $ggpp ? 'gpp='.$ggpp : '',
+    $gppl ? 'ppl='.$gppl : '',
+    )));
+
+  b('<table class="edt">');
+
+
+  b('<tr><td>');
+  b('Группа:');
+  b('<td>');
+  b(form_s('@f_group;desc', $pgroup, $people_group['group']));
+
+
+  b('</table>');
+
+
+  b(form_sb());
+  b('</form>');
+  }
+
+
+
+
+  // ------------------------------------------- ajax: update ------------------------------------------------ //
+
+if ($act == 'gpu' && p('edit') ) {
+  $ajax = TRUE;
+  //http_response_code(418);
+
+  $post = postb('f_group');
+
+  $table = 'people_group';
+  $where = '`id` = '.$ggpp;
+
+
+  if ($post) {
+    $set = array();
+    $set['group'] = postn('f_group');
+
+    if ($ggpp) {
+      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      }
+
+    elseif ($gppl) {
+      $set['people'] = $gppl;
+      $ggpp = db_write(array('table'=>$table, 'set'=>$set));
+      }
+
+    b('/'.$mod.'/');
+    }
+
+
+    // ---- deletion ---- //
+  if (!$post && $ggpp && p()) {
+    $result = db_write(array('table'=>$table, 'where'=>$where));
+
+    b('/'.$mod.'/');
+    }  // end: delete
+
+  }
+
+
 
 
 
@@ -875,15 +1493,15 @@ if ($act == 'mpv') {
   b('<script>var mod = "'.$mod.'";</script>');
   b('</head><body style="padding:0; margin:0;">');
 
-  $people = db_read(array('table' => 'people',
-                          'col' => array('lat', 'lon'),
-                          'where' => '`id` = '.$gppl,
-                          ));
+  $addr = db_read(array('table' => 'people_addr',
+                        'col' => array('lat', 'lon'),
+                        'where' => '`id` = '.$gadr,
+                        ));
 
   b('<script>
-var default_id = '.$gppl.';
-var default_lat = '.geoaf($people['lat']).';
-var default_lon = '.geoof($people['lon']).';
+var default_id = '.$gadr.';
+var default_lat = '.geoaf($addr['lat']).';
+var default_lon = '.geoof($addr['lon']).';
 </script>');
   b('<script src="/sh/leaflet-mpv.js"></script>');
 
@@ -925,12 +1543,15 @@ if ($act == 'mpp') {
   $pwlon = geooi(post('wlon'));
 
 
-  $markers = db_read(array('table' => 'people',
-                           'col' => array('id', 'surname', 'name', 'otchestvo', 'lat', 'lon'),
-                           'where' => array('`lat` < '.$pnlat,
-                                            '`lat` > '.$pslat,
-                                            '`lon` > '.$pwlon,
-                                            '`lon` < '.$pelon,
+  $markers = db_read(array('table' => array('people', 'people_addr'),
+                           'col' => array('people`.`surname', 'people`.`name', 'people`.`otchestvo',
+                                          'people_addr`.`id', 'people_addr`.`pid', 'people_addr`.`lat', 'people_addr`.`lon',
+                                          ),
+                           'where' => array('`people`.`id` = `people_addr`.`pid`',
+                                            '`people_addr`.`lat` < '.$pnlat,
+                                            '`people_addr`.`lat` > '.$pslat,
+                                            '`people_addr`.`lon` > '.$pwlon,
+                                            '`people_addr`.`lon` < '.$pelon,
                                             ),
                            'limit' => 300,
                            'key' => 'id',
@@ -948,6 +1569,70 @@ if ($act == 'mpp') {
     b(json_encode($obj));
     }
 
+  }
+
+
+
+
+  // -------------------------------- client: sync contacts people -------------------------------- //
+
+if ($act == 'csyncp') {
+  $ajax = TRUE;
+
+  //$raw_post = file_get_contents("php://input");
+  //fwrite (fopen ('m/'.$mod.'/debug/debug '.time(), 'wb'),  $raw_post);  clearstatcache();
+
+  //$json = json_decode($raw_post, TRUE);
+  //if (!isset($json['calls']))  die('error: wrong json');
+
+
+  $people = db_read(array(
+    'table' => 'people',
+    'col' => array('id', 'surname', 'name', 'otchestvo'),
+    //'where' => '`people`.`id` = `phone`.`pid`',
+    //'order' => '`id` DESC',
+    //'limit' => '20',
+    'key' => 'id',
+    ));
+//d($people);
+
+  $phone = db_read(array(
+    'table' => array('people', 'phone'),
+    'col' => array('phone`.`id', 'phone`.`pid', 'phone`.`num'),
+    'where' => '`people`.`id` = `phone`.`pid`',
+    'key' => array('pid', 'id'),
+    ));
+//d($phone);
+
+  $contacts = array();
+  foreach($people as $k=>$v) {
+    if (isset($phone[$k])) {
+      $tmp = $v;
+      $tmp['phones'] = array();
+      foreach($phone[$k] as $kk=>$vv) {
+        unset($vv['pid']);
+        if (strlen($vv['num']) == 10)  $vv['num'] = '+7'.$vv['num'];
+        $tmp['phones'][] = $vv;
+        }
+      $contacts[] = $tmp;
+      }
+    }
+
+    // ---------------- answer ---------------- //
+
+  $json = array();
+
+  if ($contacts) {
+    $json['result'] = 'ok';
+    $json['contacts'] = $contacts;
+    }
+
+  else {
+    $json['result'] = 'error';
+    $json['error'] = 'empty result';
+    }
+
+  b(json_encode($json));
   }
 
 

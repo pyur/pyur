@@ -217,6 +217,105 @@ function  img_text ($text, $par = array() ) {
 
 
 
+  // -------------------------------- shrink image -------------------------------- //
+
+function  shrink_image ($image, $required_width, $required_height) {
+
+  $width = imagesx($image);
+  $height = imagesy($image);
+
+
+  $shrinked_width = $width;
+  $shrinked_height = $height;
+  $resize = FALSE;
+
+  if ($shrinked_height > $required_height) {
+    $shrinked_height = $required_height;
+    $shrinked_width = ceil($width * ($required_height / $height));
+    $resize = TRUE;
+    }
+
+  if ($shrinked_width > $required_width) {
+    $shrinked_width = $required_width;
+    $shrinked_height = ceil($height * ($required_width / $width));
+    $resize = TRUE;
+    }
+
+
+  if ($resize) {
+    $shrinked = imagecreatetruecolor ($shrinked_width, $shrinked_height);
+    imagecopyresampled ($shrinked, $image, 0, 0, 0, 0, $shrinked_width, $shrinked_height, $width, $height);
+    }
+
+  else {
+    $shrinked = $image;
+    }
+
+
+  return  $shrinked;
+  }
+
+
+
+  // -------------------------------- shrink image, with maintain square -------------------------------- //
+
+function  shrink_image2 ($image, $max_largest, $max_smallest) {
+
+  $width = imagesx($image);
+  $height = imagesy($image);
+
+  $rotated = FALSE;
+  if ($width < $height) {
+    $rotated = TRUE;
+    $tmp = $width;
+    $width = $height;
+    $height = $tmp;
+    }
+
+
+  $shrinked_width = $width;
+  $shrinked_height = $height;
+  $resize = FALSE;
+
+  if ($shrinked_height > $max_smallest) {
+    $shrinked_height = $max_smallest;
+    $shrinked_width = ceil($width * ($max_smallest / $height));
+    $resize = TRUE;
+    }
+
+  if ($shrinked_width > $max_largest) {
+    $shrinked_width = $max_largest;
+    $shrinked_height = ceil($height * ($max_largest / $width));
+    $resize = TRUE;
+    }
+
+  if ($rotated) {
+    $tmp = $width;
+    $width = $height;
+    $height = $tmp;
+
+    $tmp = $shrinked_width;
+    $shrinked_width = $shrinked_height;
+    $shrinked_height = $tmp;
+    }
+
+
+  if ($resize) {
+    $shrinked = imagecreatetruecolor ($shrinked_width, $shrinked_height);
+    imagecopyresampled ($shrinked, $image, 0, 0, 0, 0, $shrinked_width, $shrinked_height, $width, $height);
+    }
+
+  else {
+    $shrinked = $image;
+    }
+
+
+  return  $shrinked;
+  }
+
+
+
+
   // ---------------- file DB ---------------- //
 
 function  img_upload_fdb ($db, $id, $data) {
@@ -260,13 +359,27 @@ function  img_get_fdb ($db, $id, $path = FALSE) {
     }
 
   else {
-    if ($type) {
-      $file .= $type;
-      $data = fread (fopen ($file, 'rb'), filesize ($file) );
-      }
+    if ($type)  $file .= $type;
+    $data = fread (fopen ($file, 'rb'), filesize ($file) );
 
     return  array('mime'=>$mime, 'data'=>$data);
     }
+  }
+
+
+
+function  img_delete_fdb ($db, $id) {
+
+  $tmp = substr('000000'.dechex($id), -6,6);
+  $file = 'd/'.$db.'/'.substr($tmp, 0,2).'/'.substr($tmp, 2,2).'/'.substr($tmp, 4,2);
+
+  $type = FALSE;
+  if     (file_exists($file.'.jpg'))  {$type = '.jpg';  $mime = 'image/jpeg';}
+  elseif (file_exists($file.'.png'))  {$type = '.png';  $mime = 'image/png';}
+
+  if ($type)  $file .= $type;
+
+  if (file_exists($file))  unlink ($file);  
   }
 
 

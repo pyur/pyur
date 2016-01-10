@@ -69,9 +69,10 @@ if (!$act) {
 
 
   $where = array();
-  $where[] = '`server` = '.$gsrv;
+  //$where[] = '`server` = '.$gsrv;
   $where[] = '`datetime` >= \''.$dateb.' 00:00:00\'';
   $where[] = '`datetime` <= \''.$datee.' 23:59:59\'';
+  if ($gsrv)  $where[] = '`server` = '.$gsrv;
   if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
   if ($grst)  $where[] = '`result` = '.$grst;
   if ($guan)  $where[] = '`uan` = '.$guan;
@@ -89,6 +90,7 @@ if (!$act) {
 
     $log = db_read(array('table' => array('log', 'ua'),
                          'col' => array('log`.`id', '@ip', 'log`.`datetime', 'log`.`methodn', 'log`.`httpvn', 'log`.`resultn', 'log`.`bytes', 'log`.`userx', 'log`.`type',
+                                        'log`.`server',
                                         'log`.`uri', 
                                         'log`.`referer',
                                         'log`.`uan',
@@ -134,9 +136,11 @@ if (!$act) {
 
 
 
-  b('<p class="h4">Журнал Apache – '.$server[$gsrv]['desc'].' – '.( ($gday || !$gmon) ? dateh($dateb) : (dateh($dateb).' - '.dateh($datee)) ).'</p>');  //dateh($gdate).
+  b('<p class="h4">Журнал Apache'.( $gsrv ? (' – '.$server[$gsrv]['desc']) : '' ).' – '.( ($gday || !$gmon) ? dateh($dateb) : (dateh($dateb).' - '.dateh($datee)) ).'</p>');  //dateh($gdate).
   b();
 
+
+    // ---------------- filter parameters bar ---------------- //
 
   b('<form name="log" enctype="multipart/form-data" action="/'.$mod.'/');
   //if ($gip)  b('&ip='.$gip);
@@ -150,6 +154,7 @@ if (!$act) {
   b('<td class="t">');
 
   b('<select name="f_log_server" style="border: 1px solid #ccc;" onchange="submit();">');
+  b('<option value="0">- - - - все - - - -');
   foreach ($server as $k=>$v)  b('<option value="'.$k.'"'.(($k == $gsrv)?' selected':'').'>'.$v['desc']);
   b('</select>');
 
@@ -220,7 +225,22 @@ if (!$act) {
   b();
 
 
-  if ($gday && $log) {
+  if (!$gsrv && $gday && $log) {
+    b('<img src="/'.$mod.'/grds/?');
+    if ($gip)  b('&ip='.$gip);
+    b('&year='.$gyear);
+    b('&mon='.$gmon);
+    b('&day='.$gday);
+    if ($grst)  b('&rst='.$grst);
+    if ($guan)  b('&uan='.$guan);
+    if ($gusr)  b('&usr='.$gusr);
+    if ($gipf)  b('&ipf='.$gipf);
+    b('">');
+    b();
+    b();
+    }
+
+  elseif ($gday && $log) {
     b('<img src="/'.$mod.'/grdi/?');
     b('&srv='.$gsrv);
     if ($gip)  b('&ip='.$gip);
@@ -378,6 +398,7 @@ div.log_graph {width: '.($lg['w']*$lg['s5']).'px;  height: '.($lg['h']*$lg['s5']
                            'ip' => array(),
                            'datetime' => array(),
                            'uri' => array(),
+                           'server' => array(),
                            'result' => array(),
                            'bytes' => array(),
                            'referer' => array(),
@@ -419,14 +440,17 @@ div.log_graph {width: '.($lg['w']*$lg['s5']).'px;  height: '.($lg['h']*$lg['s5']
 
         if (substr($v['referer'],0,17) == 'http://yandex.ru/') {
           $ss = FALSE;
-          $beg = strpos($v['referer'], 'text=');
-          if ($beg !== FALSE) {
+          if (($beg = strpos($v['referer'], 'text=')) !== FALSE) {
             $beg += 5;
-            $end = strpos($v['referer'], '&', $beg);
-            if ($end === FALSE)  $end = strlen($v['referer']);
+            if (($end = strpos($v['referer'], '&', $beg)) === FALSE)  $end = strlen($v['referer']);
             $ss = rawurldecode(substr($v['referer'], $beg, $end-$beg));
             }
-
+          if (($beg = strpos($v['referer'], 'etext=')) !== FALSE) {
+            $beg += 6;
+            if (($end = strpos($v['referer'], '&', $beg)) === FALSE)  $end = strlen($v['referer']);
+            $ss = rawurldecode(substr($v['referer'], $beg, $end-$beg));
+            }
+        
           if ($ss !== FALSE)  $v['referer'] = '[yandex] ['.$ss.']';
           }
 
@@ -448,9 +472,12 @@ div.log_graph {width: '.($lg['w']*$lg['s5']).'px;  height: '.($lg['h']*$lg['s5']
       }
 
 
+    $ua_col = 8;
+    if (!$gsrv)  $ua_col = 9;
+
     b('<style type="text/css">
-table.lst td:nth-child(8) hr {width: 12px; height: 12px; margin: 0 2px 0 0;}
-table.lst td:nth-child(8) i {display: inline; vertical-align: baseline; background-image: none; font-size: 7pt; color: #888; font-style: normal;}
+table.lst td:nth-child('.$ua_col.') hr {width: 12px; height: 12px; margin: 0 2px 0 0;}
+table.lst td:nth-child('.$ua_col.') i {display: inline; vertical-align: baseline; background-image: none; font-size: 7pt; color: #888; font-style: normal;}
 
 ');
 
@@ -466,16 +493,16 @@ table.lst td:nth-child(8) i {display: inline; vertical-align: baseline; backgrou
         $x = ($i % 64) * 16;
         $y = floor($i / 64) * 16  + $modules_h;
 
-        b('table.lst td:nth-child(8) hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
+        b('table.lst td:nth-child('.$ua_col.') hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
       else {
-        b('table.lst td:nth-child(8) hr.'.$kic.' {display: none;}'."\n");
+        b('table.lst td:nth-child('.$ua_col.') hr.'.$kic.' {display: none;}'."\n");
         }
       }
 
 b('
 @media (max-width: 1899px) {
-table.lst td:nth-child(8) hr {width: 9px; height: 9px; margin: 0 2px 0 0;}
+table.lst td:nth-child('.$ua_col.') hr {width: 9px; height: 9px; margin: 0 2px 0 0;}
 ');
 
     foreach ($db_uai as $kic=>$vic) {
@@ -490,10 +517,10 @@ table.lst td:nth-child(8) hr {width: 9px; height: 9px; margin: 0 2px 0 0;}
         $x = ($i % 64) * 16;
         $y = floor($i / 64) * 16  + $modules_h;
 
-        b('table.lst td:nth-child(8) hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
+        b('table.lst td:nth-child('.$ua_col.') hr.'.$kic.' {'.$resize.'background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
       else {
-        b('table.lst td:nth-child(8) hr.'.$kic.' {display: none;}'."\n");
+        b('table.lst td:nth-child('.$ua_col.') hr.'.$kic.' {display: none;}'."\n");
         }
       }
 
@@ -502,22 +529,38 @@ b('
 </style>
 ');
 
-    css_table(array(
-      '#'  => array(            0,  0,  0,   1,   0,  0,  1,   0,  1,   0,  0),
-      0    => array('f7',       0,  71, 97,  130, 17, 0,  160, 54, 0,   27, 71),
-      1024 => array('f7',       0,  71, 97,  300, 17, 36, 290, 54, 0,   27, 71),
-      1280 => array('f7',       41, 71, 97,  300, 17, 46, 300, 54, 188, 27, 71),
-      1366 => array('f7',       41, 71, 97,  300, 17, 46, 300, 54, 274, 27, 71),
-      1600 => array('f7',       41, 71, 97,  360, 30, 50, 360, 54, 370, 27, 71),
-      1920 => array('f8',       50, 86, 117, 400, 20, 50, 400, 54, 558, 31, 86),
-      2560 => array('f8', 'p4', 50, 86, 117, 400, 20, 50, 400, 54, 558, 31, 86),
-      ));
+    if (!$gsrv) {
+      css_table(array(
+        '#'  => array(            0,  0,  0,   0,  1,   0,  0,  1,   0,  1,   0,  0),
+        0    => array('f7',       0,  71, 97,  80, 130, 17, 0,  160, 54, 0,   27, 71),
+        1024 => array('f7',       0,  71, 97,  80, 300, 17, 36, 290, 54, 0,   27, 71),
+        1280 => array('f7',       41, 71, 97,  80, 300, 17, 46, 300, 54, 108, 27, 71),
+        1366 => array('f7',       41, 71, 97,  80, 300, 17, 46, 300, 54, 194, 27, 71),
+        1600 => array('f7',       41, 71, 97,  80, 360, 30, 50, 360, 54, 290, 27, 71),
+        1920 => array('f8',       50, 86, 117, 80, 400, 20, 50, 400, 54, 478, 31, 86),
+        2560 => array('f8', 'p4', 50, 86, 117, 80, 400, 20, 50, 400, 54, 558, 31, 86),
+        ));
+      }
+
+    else {
+      css_table(array(
+        '#'  => array(            0,  0,  0,   1,   0,  0,  1,   0,  1,   0,  0),
+        0    => array('f7',       0,  71, 97,  130, 17, 0,  160, 54, 0,   27, 71),
+        1024 => array('f7',       0,  71, 97,  300, 17, 36, 290, 54, 0,   27, 71),
+        1280 => array('f7',       41, 71, 97,  300, 17, 46, 300, 54, 188, 27, 71),
+        1366 => array('f7',       41, 71, 97,  300, 17, 46, 300, 54, 274, 27, 71),
+        1600 => array('f7',       41, 71, 97,  360, 30, 50, 360, 54, 370, 27, 71),
+        1920 => array('f8',       50, 86, 117, 400, 20, 50, 400, 54, 558, 31, 86),
+        2560 => array('f8', 'p4', 50, 86, 117, 400, 20, 50, 400, 54, 558, 31, 86),
+        ));
+      }
 
     b('<table class="lst" id="log_table">');
     b('<tr>');
     b('<td id="id">id');
     b('<td id="ip">ip');
     b('<td id="datetime">datetime');
+    if (!$gsrv)  b('<td id="server">server');
     b('<td id="uri">uri');
     b('<td id="rst">rst');
     b('<td id="bytes">bytes');
@@ -574,6 +617,11 @@ b('
 
       //b('<td class="t6">');
       //b($v['methodn']);
+
+
+      if (!$gsrv) {
+        b('<td>'.$server[$v['server']]['desc']);
+        }
 
 
       b('<td');
@@ -690,7 +738,7 @@ if ($act == 'uas') {
   b('<tr><td class="th" width="200">');
   b('User-agent string:');
   b('<td class="t">');
-  b(form_t('@f_search', '', 1000));
+  b(form_t('@,f_search', '', 1000));
   
   b('</table>');
 
@@ -745,6 +793,7 @@ if ($act == 'uae' && $guas) {
   include 'l/lib_ua.php';
 
   $uas = array('ua' => '',
+               'type' => 0,
                'spcf' => 0,
                );
 
@@ -821,6 +870,12 @@ if ($act == 'uae' && $guas) {
   b(form_t('f_uas_min', ($uas_min?$uas_min:''), 100));
 
 
+  b('<tr><td>');
+  b('Тип:');
+  b('<td>');
+  b(form_s('f_uas_type;d', $db_hit_type, $uas['type']));
+
+
   b('</table>');
 
 
@@ -844,6 +899,7 @@ if ($act == 'uau') {
 
   if ($post) {
     $set = array();
+    $set['type'] = postn('f_uas_type');
     $set['spcf'] = postn('f_uas_os') + (postn('f_uas_bit') << 7) + (postn('f_uas_browser') << 8) + (postn('f_uas_ver') << 16) + (postn('f_uas_min') << 24);
 
     if ($guas) {
@@ -875,6 +931,7 @@ if ($act == 'uau') {
 
 if ($act == 'uasa') {
   $ajax = TRUE;
+  //http_response_code(418);
 
   include 'l/lib_ua.php';
 
@@ -940,7 +997,9 @@ if ($act == 'uasa') {
           }
         }
 
-      b('<a href="/'.$mod.'/uae/?uas='.$k.'">');
+      b('<a href="/'.$mod.'/uae/?uas='.$k.'"');
+      if ($db_hit_type[$v['type']])  b(' style="'.( $db_hit_type[$v['type']]['tc'] ? 'color: '.$db_hit_type[$v['type']]['tc'] : '') . ( $db_hit_type[$v['type']]['bc'] ? 'background-color: '.$db_hit_type[$v['type']]['bc'] : '') .'"' );
+      b('>');
       b(htmlspecialchars($v['ua']));
       b('</a>');
 
@@ -1001,7 +1060,7 @@ if ($act == 'dft') {
 
     b('<select name="f_date_y">');
     b('<option value="0">- - - -');
-    for ($i = 2009; $i < 2021; $i++)  b('<option value="'.$i.'">'.$i);  // '.(($i == $curr['year'])?' selected':'').'
+    for ($i = 2009; $i < 2021; $i++)  b('<option value="'.$i.'"'.(($i == $curr['year'])?' selected':'').'>'.$i);
     b('</select> г. ');
 
 
@@ -1030,9 +1089,10 @@ if ($act == 'dft') {
     $where[] = '`log`.`server` = '.$gsrv;
     if ($gyear)  $where[] = '`log`.`datetime` >= \''.datesql($gyear, $gmon, $gday).' 00:00:00\'';
 
-    $count = db_read(array('table' => 'log',
-                           'where' => $where,
-                           ));
+    $count = db_read(array(
+      'table' => 'log',
+      'where' => $where,
+      ));
 
 
     $where[] = '`ua`.`id` = `log`.`uan`';
@@ -1044,8 +1104,8 @@ if ($act == 'dft') {
       $offset = $n * $nsize;
 
       $log = db_read(array('table' => array('log', 'ua'),
-                           'col' => array('log`.`id', '@ip', 'log`.`datetime', 'log`.`type` AS `extype',
-                                          'ua`.`type',
+                           'col' => array('log`.`id', '@ip', 'log`.`datetime', 'log`.`type',
+                                          'ua`.`type` AS `uatype',
                                           ),
                            'where' => $where,
 
@@ -1060,11 +1120,11 @@ if ($act == 'dft') {
         $type = 0;
         $ip = parse_ip($v['@ip'], substr($v['datetime'], 0, 10) );
         if ($ip['type'])  $type = $ip['type'];
-        elseif ($v['type'])  $type = $v['type'];
+        elseif ($v['uatype'])  $type = $v['uatype'];
 
         //if ($type)  $update[$k] = $type;
         //elseif ($v['extype'])  $update[$k] = 0;  // only for repaint
-        if ($type != $v['extype'])  $update[$k] = $type;
+        if ($type != $v['type'])  $update[$k] = $type;
         }
 
 
@@ -1532,9 +1592,10 @@ if ($act == 'grm') {
 
   $where = array();
   //$where[] = '`ua`.`id` = `log`.`uan`';
-  $where[] = '`server` = '.$gsrv;
+  //$where[] = '`server` = '.$gsrv;
   $where[] = '`datetime` >= \''.$dateb.' 00:00:00\'';
   $where[] = '`datetime` <= \''.$datee.' 23:59:59\'';
+  if ($gsrv)  $where[] = '`server` = '.$gsrv;
   if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
   if ($grst)  $where[] = '`result` = '.$grst;
   if ($guan)  $where[] = '`uan` = '.$guan;
@@ -1671,7 +1732,7 @@ if ($act == 'grm') {
 
 
   // ------------------------------------------------ График - День ------------------------------------------------ //
-
+/*
 if ($act == 'grd') {
   $ajax = TRUE;
 
@@ -1681,9 +1742,10 @@ if ($act == 'grd') {
     // -------- collecting data -------- //
 
   $where = array();
-  $where[] = '`server` = '.$gsrv;
+  //$where[] = '`server` = '.$gsrv;
   $where[] = '`datetime` >= \''.$date.' 00:00:00\'';
   $where[] = '`datetime` <= \''.$date.' 23:59:59\'';
+  if ($gsrv)  $where[] = '`server` = '.$gsrv;
   if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
   if ($grst)  $where[] = '`result` = '.$grst;
   if ($guan)  $where[] = '`uan` = '.$guan;
@@ -1778,14 +1840,14 @@ if ($act == 'grd') {
 
   imagepng ($image);
   }
-
+*/
 
 
 
 
 
   // ------------------------------------------------ График на год ------------------------------------------------ //
-
+/*
 if ($act == 'gry') {
   $ajax = TRUE;
 
@@ -1838,9 +1900,10 @@ if ($act == 'gry') {
 
   $where = array();
   //$where[] = '`ua`.`id` = `log`.`uan`';
-  $where[] = '`server` = '.$gsrv;
+  //$where[] = '`server` = '.$gsrv;
   //$where[] = '`datetime` >= \''.$dateb.' 00:00:00\'';
   //$where[] = '`datetime` <= \''.$datee.' 23:59:59\'';
+  if ($gsrv)  $where[] = '`server` = '.$gsrv;
   if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
   if ($grst)  $where[] = '`result` = '.$grst;
   if ($guan)  $where[] = '`uan` = '.$guan;
@@ -1981,7 +2044,7 @@ if ($act == 'gry') {
 
   imagepng ($image);
   }
-
+*/
 
 
 
@@ -2041,9 +2104,10 @@ if ($act == 'gry3') {
 
   $where = array();
   //$where[] = '`ua`.`id` = `log`.`uan`';
-  $where[] = '`server` = '.$gsrv;
+  //$where[] = '`server` = '.$gsrv;
   //$where[] = '`datetime` >= \''.$dateb.' 00:00:00\'';
   //$where[] = '`datetime` <= \''.$datee.' 23:59:59\'';
+  if ($gsrv)  $where[] = '`server` = '.$gsrv;
   if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
   if ($grst)  $where[] = '`result` = '.$grst;
   if ($guan)  $where[] = '`uan` = '.$guan;
@@ -2152,6 +2216,166 @@ if ($act == 'gry3') {
     }
 
   imagecopymerge ($image, $image_text, 0,480, 0,0, $par['w'],12, 100);
+
+
+  header('Content-Type: image/png');
+
+  imagepng ($image);
+  }
+
+
+
+
+
+
+  // ------------------------------------------------ График - День (server) ------------------------------------------------ //
+
+if ($act == 'grds') {
+//echo floor(log(4, 4)) +1;
+//die;
+  $ajax = TRUE;
+
+  $gq = 3;  // quantizer (minutes in pixel)
+  $gs = 2;  // scale
+  $gsh = 12;  // scale height
+  $gsf = 3;  // scale factor
+// (2 - 1, 2, 4, 8, 16, 32)
+// (3 - 1, 3, 9, 27, 81, 243)
+// (4 - 1, 4, 16, 64, 256, 1024)
+
+  $date = datesql($gyear, $gmon, $gday);
+
+
+  $server = db_read(array('table' => 'server',
+                          'col' => array('id', 'tp', 'desc'),
+                          'key' => 'tp',
+                          ));
+  $server = tsort($server);
+
+
+    // -------- collecting data -------- //
+
+  $where = array();
+  $where[] = '`datetime` >= \''.$date.' 00:00:00\'';
+  $where[] = '`datetime` <= \''.$date.' 23:59:59\'';
+  if ($gip)  $where[] = '`ip` '.($gipn?'!':'').'= INET_ATON(\''.$gipw.'\')';
+  if ($grst)  $where[] = '`result` = '.$grst;
+  if ($guan)  $where[] = '`uan` = '.$guan;
+  if ($gusr)  $where[] = '`userx` = '.$gusr;
+  if ($gipf)  $where[] = '`ipf` = INET_ATON(\''.$gipf.'\')';
+
+
+  $log = db_read(array('table' => 'log',
+                       'col' => array('id', '@ip', 'datetime', 'type', 'server'),
+                       'where' => $where,
+                       'key' => 'id',
+                       ));
+
+  $set = array();
+  $sett = array();
+  foreach ($log as $v) {
+    $mi = datee($v['datetime'],'h') * 60 + datee($v['datetime'],'i');
+    $mi = floor($mi/$gq);
+
+    $set[$v['server']][$mi][] = TRUE;
+    if (!isset($sett[$v['server']][$mi])) {
+      $sett[$v['server']][$mi] = $v['type'];
+      }
+    }
+
+
+  $gw = 1440 / $gq;
+  $gh = count($server);
+  $ghb = $gsh / $gs;  // height of bar in non stretched pixels
+  $ghp = $gh * $ghb;  // total height in non stretched pixels
+
+  //$imageg = imagecreatetruecolor ($gw, $gh);
+  $imageg = imagecreatetruecolor ($gw, $ghp);
+
+  $transp = imagecolorallocate ($imageg, 255, 255, 255);
+  imagecolortransparent ($imageg, $transp);
+  $black = imagecolorallocate ($imageg, 0, 0, 0);
+  $red = imagecolorallocate ($imageg, 255, 0, 0);
+
+
+    // ---------------- рисуем график ---------------- //
+
+  imagefilledrectangle ($imageg, 0, 0, $gw-1, $ghp-1, $transp);
+
+  $color = array();
+  foreach ($db_hit_type as $k=>$v) {
+    $color[$k] = imagecolorallocate ($imageg, hexdec(substr($db_hit_type[$k]['c'],1,1).substr($db_hit_type[$k]['c'],1,1)), hexdec(substr($db_hit_type[$k]['c'],2,1).substr($db_hit_type[$k]['c'],2,1)), hexdec(substr($db_hit_type[$k]['c'],3,1).substr($db_hit_type[$k]['c'],3,1)));
+    }
+
+  $y = 0;
+  foreach ($server as $sk=>$sv) {
+    for ($x = 0; $x < $gw; $x++) {
+      if (isset($set[$sk][$x])) {
+        //imagesetpixel ($imageg, $x, $y, $black);
+        //if (!isset($color[$set[$sk][$x]]))  $color[$set[$sk][$x]] = imagecolorallocate ($imageg, hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],1,1).substr($db_hit_type[$set[$sk][$x]]['c'],1,1)), hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],2,1).substr($db_hit_type[$set[$sk][$x]]['c'],2,1)), hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],3,1).substr($db_hit_type[$set[$sk][$x]]['c'],3,1)));
+        //imagesetpixel ($imageg, $x, $y, $color[$set[$sk][$x]]);
+
+        $bar_height = floor(log(count($set[$sk][$x]), $gsf)) +1;
+        //$bar_height = floor(log(102400, 4)) +1;
+
+        if ($bar_height > $ghb)  $bar_height = $ghb;
+        //imagefilledrectangle ($imageg, $x, ($y * $ghb), $x, (($y+1) * $ghb)-1, $color[$sett[$sk][$x]]);
+        imagefilledrectangle ($imageg, $x, (($y+1) * $ghb) -$bar_height, $x, (($y+1) * $ghb)-1, $color[$sett[$sk][$x]]);
+        }
+      }
+    $y++;
+    }
+
+
+    // ---------------- сетка ---------------- //
+  $gto = 100;
+  $gws = $gw*$gs + $gto;
+  //$ghs = $gh*$gsh;
+  $ghs = $ghp * $gs;
+
+  $image = imagecreatetruecolor ($gws, $ghs);
+
+  $black = imagecolorallocate ($image, 0, 0, 0);
+  $white = imagecolorallocate ($image, 255, 255, 255);
+  $red = imagecolorallocate ($image, 255, 0, 0);
+  $green = imagecolorallocate ($image, 0, 255, 0);
+  $blue = imagecolorallocate ($image, 0, 0, 255);
+
+  $grey = imagecolorallocate ($image, 128, 128, 128);
+  $greyt = imagecolorallocate ($image, 192, 192, 192);
+  $greyl = imagecolorallocate ($image, 216, 216, 216);
+  $bg = imagecolorallocate ($image, 240, 240, 240);
+
+
+  imagefilledrectangle ($image, 0, 0, $gws-1, $ghs-1, $bg);
+
+
+  $colory = array();
+
+  $y = 0;
+  //foreach ($setc as $sk=>$sv) {
+  foreach ($server as $sk=>$sv) {
+    //if (!isset($colory[$sett[$sk]]))  $colory[$sett[$sk]] = imagecolorallocate ($image, hexdec(substr($db_hit_type[$sett[$sk]]['c'],1,1).substr($db_hit_type[$sett[$sk]]['c'],1,1)), hexdec(substr($db_hit_type[$sett[$sk]]['c'],2,1).substr($db_hit_type[$sett[$sk]]['c'],2,1)), hexdec(substr($db_hit_type[$sett[$sk]]['c'],3,1).substr($db_hit_type[$sett[$sk]]['c'],3,1)));
+    //imagesetpixel ($image, $x, $y, $color[$sett[$sk]]);
+
+    imageline ($image, 0, ($y+1)*$gsh-0,  $gws-1, ($y+1)*$gsh-0, $greyl);
+    imagettftext ($image, 8, 0, 1, ($y+1)*$gsh-2, (isset($set[$sk])?$black:$greyt), 'i/tahoma.ttf', $sv['desc']);
+    //imagettftext ($image, 8, 0, 1, ($y+1)*$gsh-2, $colory[$sett[$sk]], 'i/tahoma.ttf', $sk);
+    //$box = imagettfbbox (8, 0, 'p/tahoma.ttf', $sk);
+    //imagettftext ($image, 8, 0, 98-($box[2] - $box[0]), ($y+1)*$gsh-2, (isset($set[$sk])?$black:$greyt), 'p/tahoma.ttf', $sk);
+    $y++;
+    }
+
+  imageline ($image, $gto-1, 0,  $gto-1, $ghs, $black);    // 0:00
+  imageline ($image, 60/$gq*$gs*3  +$gto, 0,  60/$gq*$gs*3  +$gto, $ghs, $greyt);  // 3:00
+  imageline ($image, 60/$gq*$gs*9  +$gto, 0,  60/$gq*$gs*9  +$gto, $ghs, $red);    // 9:00
+  imageline ($image, 60/$gq*$gs*12 +$gto, 0,  60/$gq*$gs*12 +$gto, $ghs, $greyt);  // 12:00
+  imageline ($image, 60/$gq*$gs*15 +$gto, 0,  60/$gq*$gs*15 +$gto, $ghs, $greyt);  // 15:00
+  imageline ($image, 60/$gq*$gs*18 +$gto, 0,  60/$gq*$gs*18 +$gto, $ghs, $red);    // 18:00
+  imageline ($image, 60/$gq*$gs*21 +$gto, 0,  60/$gq*$gs*21 +$gto, $ghs, $greyt);  // 21:00
+
+  //imagecopyresized ($image, $imageg, 100,0 , 0,0 , $gws-$gto , $ghs , $gw , $gh );
+  imagecopyresized ($image, $imageg, 100,0 , 0,0 , $gws-$gto , $ghs , $gw , $ghp );
 
 
   header('Content-Type: image/png');
@@ -2277,7 +2501,7 @@ if ($act == 'grdu') {
     $y++;
     }
 
-  imageline ($image, $gto, 0,  $gto, $ghs, $black);    // 0:00
+  imageline ($image, $gto-1, 0,  $gto-1, $ghs, $black);    // 0:00
   imageline ($image, 60/$gq*$gs*3  +$gto, 0,  60/$gq*$gs*3  +$gto, $ghs, $greyt);    // 3:00
   imageline ($image, 60/$gq*$gs*(17/2)  +$gto, 0,  60/$gq*$gs*(17/2)  +$gto, $ghs, $red);    // 8:30
   imageline ($image, 60/$gq*$gs*13  +$gto, 0,  60/$gq*$gs*13  +$gto, $ghs, $greyt);    // 13:00
@@ -2306,6 +2530,7 @@ if ($act == 'grdi') {
   $gq = 3;  // quantizer
   $gs = 2;  // scale
   $gsh = 12;  // scale height
+  $gsf = 3;  // scale factor
 
   $date = datesql($gyear, $gmon, $gday);
 
@@ -2336,21 +2561,20 @@ if ($act == 'grdi') {
     $mi = datee($v['datetime'],'h') * 60 + datee($v['datetime'],'i');
     $mi = floor($mi/$gq);
 
-    if (!isset($set[$v['@ip']][$mi])) {
-      $set[$v['@ip']][$mi] = $v['type'];
-      }
+    $set[$v['@ip']][$mi][] = TRUE;
 
     if (!isset($setc[$v['@ip']])) { $setc[$v['@ip']] = 1;  $sett[$v['@ip']] = $v['type']; }
     else  $setc[$v['@ip']]++;
-
     }
   arsort($setc);
 
 
   $gw = 1440 / $gq;
   $gh = count($set);
+  $ghb = $gsh / $gs;  // height of bar in non stretched pixels
+  $ghp = $gh * $ghb;  // total height in non stretched pixels
 
-  $imageg = imagecreatetruecolor ($gw, $gh);
+  $imageg = imagecreatetruecolor ($gw, $ghp);
 
   $transp = imagecolorallocate ($imageg, 255, 255, 255);
   imagecolortransparent ($imageg, $transp);
@@ -2360,17 +2584,20 @@ if ($act == 'grdi') {
 
     // ---------------- рисуем график ---------------- //
 
-  imagefilledrectangle ($imageg, 0, 0, $gw-1, $gh-1, $transp);
+  imagefilledrectangle ($imageg, 0, 0, $gw-1, $ghp-1, $transp);
 
   $color = array();
+  foreach ($db_hit_type as $k=>$v) {
+    $color[$k] = imagecolorallocate ($imageg, hexdec(substr($db_hit_type[$k]['c'],1,1).substr($db_hit_type[$k]['c'],1,1)), hexdec(substr($db_hit_type[$k]['c'],2,1).substr($db_hit_type[$k]['c'],2,1)), hexdec(substr($db_hit_type[$k]['c'],3,1).substr($db_hit_type[$k]['c'],3,1)));
+    }
 
   $y = 0;
   foreach ($setc as $sk=>$sv) {
     for ($x = 0; $x < $gw; $x++) {
       if (isset($set[$sk][$x])) {
-        //imagesetpixel ($imageg, $x, $y, $black);
-        if (!isset($color[$set[$sk][$x]]))  $color[$set[$sk][$x]] = imagecolorallocate ($imageg, hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],1,1).substr($db_hit_type[$set[$sk][$x]]['c'],1,1)), hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],2,1).substr($db_hit_type[$set[$sk][$x]]['c'],2,1)), hexdec(substr($db_hit_type[$set[$sk][$x]]['c'],3,1).substr($db_hit_type[$set[$sk][$x]]['c'],3,1)));
-        imagesetpixel ($imageg, $x, $y, $color[$set[$sk][$x]]);
+        $bar_height = floor(log(count($set[$sk][$x]), $gsf)) +1;
+        if ($bar_height > $ghb)  $bar_height = $ghb;
+        imagefilledrectangle ($imageg, $x, (($y+1) * $ghb) -$bar_height, $x, (($y+1) * $ghb)-1, $color[$sett[$sk]]);
         }
       }
     $y++;
@@ -2380,7 +2607,7 @@ if ($act == 'grdi') {
     // ---------------- сетка ---------------- //
   $gto = 100;
   $gws = $gw*$gs + $gto;
-  $ghs = $gh*$gsh;
+  $ghs = $ghp * $gs;
 
   $image = imagecreatetruecolor ($gws, $ghs);
 
@@ -2414,7 +2641,7 @@ if ($act == 'grdi') {
     $y++;
     }
 
-  imageline ($image, $gto, 0,  $gto, $ghs, $black);    // 0:00
+  imageline ($image, $gto-1, 0,  $gto-1, $ghs, $black);    // 0:00
   imageline ($image, 60/$gq*$gs*3  +$gto, 0,  60/$gq*$gs*3  +$gto, $ghs, $greyt);  // 3:00
   imageline ($image, 60/$gq*$gs*9  +$gto, 0,  60/$gq*$gs*9  +$gto, $ghs, $red);    // 9:00
   imageline ($image, 60/$gq*$gs*12 +$gto, 0,  60/$gq*$gs*12 +$gto, $ghs, $greyt);  // 12:00
@@ -2422,7 +2649,7 @@ if ($act == 'grdi') {
   imageline ($image, 60/$gq*$gs*18 +$gto, 0,  60/$gq*$gs*18 +$gto, $ghs, $red);    // 18:00
   imageline ($image, 60/$gq*$gs*21 +$gto, 0,  60/$gq*$gs*21 +$gto, $ghs, $greyt);  // 21:00
 
-  imagecopyresized ($image, $imageg, 100,0 , 0,0 , $gws-$gto , $ghs , $gw , $gh );
+  imagecopyresized ($image, $imageg, 100,0 , 0,0 , $gws-$gto , $ghs , $gw , $ghp );
 
 
   header('Content-Type: image/png');

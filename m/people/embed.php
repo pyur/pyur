@@ -123,7 +123,7 @@ window.resizeTo(344,window.screen.availHeight);
 
 
   // -------------------------------- embed: именинники v1 -------------------------------- //
-
+/*
 if ($act == 'v1') {
 
     // ---- collect birthdays ---- //
@@ -209,7 +209,7 @@ if ($act == 'v1') {
     }  //  end: if $bdpeople
 
   }
-
+*/
 
 
 
@@ -267,6 +267,7 @@ div.vsn {
 	border: 1px solid #ccc;
 	border-radius: 4px;
 	text-align: center;
+	background-color: #fff;
 	}
 
 div.vsv {
@@ -292,7 +293,6 @@ a.vsd {
 ');
 
 
-  //b('<p class="f16 b c">Именинники</p>');
   $title = 'Именинники';
   b('<table class="tabc">');
 
@@ -308,11 +308,11 @@ a.vsd {
       $wkd = date('w', datesqltime($date));
 
       b('<td class="vsc"');
-      if (datee($date,'m') != $gmon)  b(' style="opacity: 0.3;');
+      if (datee($date,'m') != $gmon)  b(' style="background-color: #e8e8e8;');
+      elseif ($date == $curr['date'])  b(' style="background-color: #ff8;"');
       b('">');
 
-      b('<div class="vsn"');
-      if ($date == $curr['date'])  b(' style="background-color: #ff8;"');
+      b('<div style="position: absolute; width: 186px; text-align: center; font-size: 60pt; color: #ddd;"');  // font-weight: bold; background: cyan; 
       b('>');
       b(datee($date,'d'));
       b('</div>');
@@ -332,7 +332,7 @@ a.vsd {
           $byear = datee($v['birthdate']);
           if ($byear) {
             $age = $year - $byear;
-            b(', '.$age.' '.pend($age,'year'));
+            b(', '.$age);
             }
 
           }
@@ -347,14 +347,6 @@ a.vsd {
 
   b('</table>');
 
-  b('
-<script>
-
-//window.moveTo(window.screen.availWidth - 350,0);
-//window.resizeTo(350,window.screen.availHeight);
-
-</script>
-');
   }
 
 

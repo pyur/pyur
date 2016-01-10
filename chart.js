@@ -10,8 +10,8 @@ var $chart = function(div) {
   //svg.height.baseVal.value = h;
   svg.style.width = '800px';
   svg.style.height = '200px';
-  svg.width.baseVal.value = 800;
-  svg.height.baseVal.value = 200;
+  //svg.width.baseVal.value = 800;
+  //svg.height.baseVal.value = 200;
 
   div.appendChild(svg);
 
@@ -188,6 +188,38 @@ var $chart = function(div) {
 
     for (i in cdata[1]) {
       pl.add(30 + i*25, (h-20) - cdata[1][i]*step);
+      }
+    }
+
+
+
+    // ---------------- auto ---------------- //
+
+  this.auto = function(cdata) {
+    var i;
+    var scale = 16;
+
+    rect(0.5,0.5, w-1,h-1, {s:'#000',w:1});
+
+
+      // ---- chart ---- //
+
+    line(scale,h-scale, scale,scale, {s:'#008',w:2});
+    line(scale,h-scale, w-scale,h-scale, {s:'#008',w:2});
+
+
+    for (i = 1; i <= 10; i++) {
+      line(scale,(h-scale) - i*scale, 24,(h-scale) - i*scale, {s:'#008',w:2});
+      line(24,(h-scale-0.5) - i*scale, w-scale,(h-scale-0.5) - i*scale, {s:'#ccf'});
+      }
+
+
+    createMarker();
+
+    var pl = polyline({s:'#080',w:2});
+
+    for (i in cdata) {
+      pl.add(30 + i*25, (h-scale) - cdata[i]*scale);
       }
     }
 

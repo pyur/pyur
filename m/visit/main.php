@@ -141,7 +141,7 @@ b('
               }
 
             if ($vv['desc']) {
-              $tmp[] = $ab.$vv['desc'].$ae;
+              $tmp[] = $ab.htmlentities($vv['desc']).$ae;
               }
 
             if (!$tmp) $tmp[] = $ab.'–'.$ae;
@@ -326,7 +326,7 @@ $.event(\'people\', \'change\', butgeo);
   b('<tr><td>');
   b('Описание:');
   b('<td>');
-  b(form_t('f_visit_desc', $visit['desc'], 300));
+  b(form_t('f_visit_desc', htmlentities($visit['desc']), 300));
 
 
   b('</table>');
@@ -413,7 +413,7 @@ if ($act == 'ph') {
     if (isset($gsch[2]))  $where[] = '`otchestvo` LIKE \''.$gsch[2].'%\'';
 
     $people = db_read(array('table' => 'people',
-                            'col' => array('id', 'surname', 'name', 'otchestvo', 'lat', 'lon'),
+                            'col' => array('id', 'surname', 'name', 'otchestvo'),
                             'where' => $where,
                             'order' => array('`surname`', '`name`', '`otchestvo`'),
                             'limit' => '100',
@@ -421,14 +421,24 @@ if ($act == 'ph') {
                             'key' => 'id',
                             ));
 
+    $where1 = $where;
+    $where1[] = '`people_addr`.`pid` = `people`.`id`';
+    $people_addr = db_read(array('table' => array('people', 'people_addr'),
+                                 'col' => array('people_addr`.`id', 'people_addr`.`pid', 'people_addr`.`lat', 'people_addr`.`lon'),
+                                 'where' => $where1,
+
+                                 'key' => 'pid',  // будет перезатираться последним
+                                 ));
+
+
       // -------------------------------- output -------------------------------- //
 
     if ($people) {
       $obj = array();
       foreach ($people as $k=>$v) {
         $obj['#'.$k] = array('fiof' => fiof($v['surname'], $v['name'], $v['otchestvo']),
-                             'lat' => geoaf($v['lat']),
-                             'lon' => geoof($v['lon']),
+                             'lat' => geoaf( isset($people_addr[$k]) ? $people_addr[$k]['lat'] : 0 ),
+                             'lon' => geoof( isset($people_addr[$k]) ? $people_addr[$k]['lon'] : 0 ),
                              );
         }
       b(json_encode($obj));
