@@ -10,6 +10,7 @@ if (!isset($body))  die ('error: this is a pluggable module and cannot be used s
 $gcll = getn('cll');
 $gphn = getn('phn');
 $glne = getn('lne');
+$gppl = getn('ppl');
 
 $gdate = gets('date', $curr['date']);
 $gyear = gets('year', $curr['year']);
@@ -67,28 +68,27 @@ if (!$act) {
   $weeks = round((datesqltime($dateend) - datesqltime($datebeg) +86400) / (86400 * 7));
 
 
-  $where = array('`call`.`dt` >= \''.$datebeg.' 00:00:00\'',
-                 '`call`.`dt` <= \''.$dateend.' 23:59:59\'',
-                 );
+  $where = array(
+    '`call`.`date` >= \''.$datebeg.'\'',
+    '`call`.`date` <= \''.$dateend.'\'',
+    );
 
-  $call = db_read(array(
-    'table' => 'call',
-    'col' => array('id', 'imei', 'pid', 'dt', 'phone', 'type', 'duration', 'name', '!DATE(`dt`) AS `dated`'),
-    'where' => $where,
-    'order' => '`dt`',
-    'key' => array('dated', 'id'),
-    ));
+  $call = $db->
+    table('call')->
+    col('id', 'imei', 'pid', 'date', 'time', 'phone', 'type', 'duration', 'name')->
+    where($where)->
+    order('`date`, `time`')->
+    key('date', 'id')->
+    r();
 
 
-  $phone = db_read(array(
-    'table' => array('phone', 'people'),
-    'col' => array(
-      'phone`.`num', 'phone`.`desc',  // 'phone`.`id', 
-      'people`.`surname', 'people`.`name',  // 'people`.`id', 
-      ),
-    'where' => '`phone`.`pid` = `people`.`id`',
-    'key' => 'num',
-    ));
+  $phone = $db->
+    table('phone', 'people')->
+    col('phone`.`num', 'phone`.`desc',  // 'phone`.`id', 
+        'people`.`surname', 'people`.`name')->  // 'people`.`id', 
+    where('`phone`.`pid` = `people`.`id`')->
+    key('num')->
+    r();
 
 
 
@@ -156,7 +156,7 @@ if (!$act) {
             b('<div class="call_row" style="background-color: '.$db_imei[$vv['imei']]['c'].'; border-color: '.$color.'">');
 
             b('<div class="call_time">');
-            b(substr($vv['dt'],11,5));
+            b(substr($vv['time'],0,5));
             b('</div>');
 
             if (isset($db_call_type[$vv['type']])) {
@@ -228,23 +228,23 @@ if ($act == 'cle' && p('edit') ) {
   $call = array(
     'imei' => 0,
     'pid' => 0,
-    'dt' => $curr['datetime'],
+    'date' => $curr['date'],
+    'time' => substr($curr['datetime'],11,6).'00',
     'phone' => '',
     'type' => 0,
     'duration' => 0,
     'name' => '',
     );
-  $call['dt'][17] = '0';
-  $call['dt'][18] = '0';
 
   if ($gcll) {
     $col = array();
     foreach ($call as $k=>$v)  $col[] = $k;
 
-    $call = db_read(array('table' => 'call',
-                          'col' => $col,
-                          'where' => '`id` = '.$gcll,
-                          ));
+    $call = $db->
+      table('call')->
+      col($col)->
+      where('`id` = '.$gcll)->
+      r();
     }
 
 
@@ -263,9 +263,9 @@ if ($act == 'cle' && p('edit') ) {
   b();
 
 
-  b(form('call', '/'.$mod.'/clu/?'
-    .($gcll ? '&cll='.$gcll : '')
-    ));
+  b(form('call', '/'.$mod.'/clu/', array(
+    $gcll ? 'cll='.$gcll : '',
+    )));
 
   b('<table class="edt">');
 
@@ -285,7 +285,7 @@ if ($act == 'cle' && p('edit') ) {
   b('<tr><td>');
   b('Дата, время:');
   b('<td>');
-  b(form_dt(array('f_call_date_y;2000', 'f_call_date_m', 'f_call_date_d', 'f_call_date_h', 'f_call_date_i', 'f_call_date_s'),  $call['dt'] ));
+  b(form_dt(array('f_call_date_y;2000', 'f_call_date_m', 'f_call_date_d', 'f_call_date_h', 'f_call_date_i', 'f_call_date_s'),  $call['date'].' '.$call['time'] ));
 
 
   b('<tr><td>');
@@ -337,18 +337,20 @@ if ($act == 'clu' && p('edit') ) {
     $set = array();
     $set['imei'] = postn('f_call_imei');
     $set['pid'] = postn('f_call_pid');
-    $set['dt'] = datesql(postn('f_call_date_y'), postn('f_call_date_m'), postn('f_call_date_d'), postn('f_call_date_h'), postn('f_call_date_i'), postn('f_call_date_s'));
+    $date = datesql(postn('f_call_date_y'), postn('f_call_date_m'), postn('f_call_date_d'), postn('f_call_date_h'), postn('f_call_date_i'), postn('f_call_date_s'));
+    $set['date'] = substr($date,0,10);
+    $set['time'] = substr($date,11,8);
     $set['phone'] = post('f_call_phone');
     $set['type'] = postn('f_call_type');
     $set['duration'] = postn('f_call_duration');
     $set['name'] = post('f_call_name');
 
     if ($gcll) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gcll = db_write(array('table'=>$table, 'set'=>$set));
+      $gcll = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -357,12 +359,16 @@ if ($act == 'clu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gcll && p()) {
-    $pdate = db_read(array('table' => 'call',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
+    $pdate = $db->
+      table('call')->
+      col('!DATE(`dt`)')->
+      where($where)->
+      r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->
+      table($table)->
+      where($where)->
+      d();
 
     b('/'.$mod.'/?date='.$pdate);
 
@@ -371,6 +377,103 @@ if ($act == 'clu' && p('edit') ) {
     }  // end: delete
 
   }
+
+
+
+
+  // ---------------------------------------------- Call graphic -------------------------------------------------- //
+
+if ($act == 'cgr') {
+
+  $gyear = datee($gdate);
+  $gmon = datee($gdate,'m');
+  $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
+
+  //$datebeg = datesql(mktime(0, 0, 0, $gmon, 2 - date('N', mktime(0, 0, 0, $gmon, 1, $gyear)), $gyear));
+  //$dateend = datesql(mktime(0, 0, 0, $gmon, $gmdays + (7-date('N', mktime(0, 0, 0, $gmon, $gmdays, $gyear))), $gyear));
+  //$weeks = round((datesqltime($dateend) - datesqltime($datebeg) +86400) / (86400 * 7));
+  $datebeg = datesql(mktime(0, 0, 0, $gmon, 1, $gyear));
+  $dateend = datesql(mktime(0, 0, 0, $gmon, $gmdays, $gyear));
+
+
+  $where = array(
+    '`call`.`date` >= \''.$datebeg.'\'',
+    '`call`.`date` <= \''.$dateend.'\'',
+    );
+  $where[] = '`call`.`phone` = `phone`.`num`';
+  $where[] = '`phone`.`pid` = '.$gppl;
+
+  $call = $db->
+    table('call', 'phone')->
+    col('call`.`id', 'call`.`date', 'call`.`time', 'call`.`type')->  // , 'imei', 'pid', 'phone', 'duration', 'name'
+    where($where)->
+    key('date', 'id')->
+    r();
+
+
+  $call_time = array();
+  if ($call)  foreach ($call as $k=>$v) {
+    foreach ($v as $kk=>$vv) {
+      $call_time[$k][(int)substr($vv['time'],0,2)][$kk] = $vv;
+      }
+    }
+
+
+    // ---- submenu ---- //
+  $date_prev = datesql(mktime(0,0,0, ($gmon-1),1,$gyear));
+  $date_next = datesql(mktime(0,0,0, ($gmon+1),1,$gyear));
+
+  $submenu[datee($date_prev).'.'.datee($date_prev, 'M').';navigation-180-button'] = '/'.$mod.'/'.$act.'/?date='.$date_prev.'&ppl='.$gppl;
+  $submenu[datee($date_next).'.'.datee($date_next, 'M').';navigation-000-button'] = '/'.$mod.'/'.$act.'/?date='.$date_next.'&ppl='.$gppl;
+
+  $submenu['Календарь;calendar-select'] = '/'.$mod.'/cdr/';
+  submenu();
+    // ---- end: submenu ---- //
+
+
+
+  b('<p class="h4">Звонки ('.substr('00'.$gmon,-2,2).'.'.$gyear.')</p>');
+
+
+  b('<div style="display: inline-block;">');  // table  border: 1px dashed red;
+
+  $date = array();
+  $datet = $datebeg;
+  while (1) {
+    if ($datet == $dateend)  break;
+    $datet = datesql(mktime(0,0,0, datee($datet,'m'), datee($datet,'d')+1, datee($datet)));
+    $date[] = $datet;
+    }
+
+  for ($i = 0; $i < 24; $i++) {
+    b('<div style="white-space: nowrap;">');  // row  border: 1px dashed blue;
+
+    b('<div style="display: inline-block;  width: 20px;  height: 20px;  vertical-align: top;">');
+    b($i);
+    b('</div>');
+    foreach ($date as $d) {
+      b('<div style="display: inline-block;  width: 20px;  height: 20px;  vertical-align: top;');  // row    border: 1px dashed magenta;
+      if (isset($call_time[$d][$i]))  b(' background-color: #a00;');
+      b('">');
+      b('</div>');
+      }
+
+    b('</div>');
+    }
+
+    b('<div></div>');
+    foreach ($date as $d) {
+      b('<div style="display: inline-block;  width: 20px;  height: 20px;');  // row
+      //if (isset($call_time[$d][$i]))  b(' background-color: #a00;');
+      b('">');
+      b(datee($d,'d'));
+      b('</div>');
+      }
+
+  b('</div>');
+  }
+
+
 
 
 
@@ -448,97 +551,6 @@ if ($act == 'cdr') {
 
   b('</table>');
   }
-
-
-
-
-  // ---------------------------------------------- import -------------------------------------------------- //
-/*
-if ($act == 'imp') {
-  //$file = 'm/'.$mod.'/debug/debug 1444037896';
-  //$file = 'm/'.$mod.'/debug/debug 1444043326-crop';
-
-  //$file = 'm/'.$mod.'/debug/debug 1443811181';
-  $file = 'm/'.$mod.'/debug/debug 1443811195-consolidate';
-  //$file = 'm/'.$mod.'/debug/debug ';
-
-  $file = fread (fopen ($file, 'rb'), filesize($file));
-
-  //$file = strtr($file, array("\r"=>'') );
-  //$line = explode("\n", $file);
-  $json = json_decode($file, TRUE);
-  //if (!isset($json['calls']))  die('error: wrong json');
-  //$json['calls'] = $json;
-  d(count($json['calls']));
-
-  foreach ($json['calls'] as $k=>$v) {
-    $phone = filter_n($v['v3']);
-    $phone = substr($phone,-10,10);
-
-    $check = db_read(array(
-      'table' => 'call',
-      'col' => 'id',
-      'where' => '`pid` = '.$v['v1'],
-      ));
-
-    if (!$check) {
-      $set = array();
-      $set['imei'] = 2;
-      $set['pid'] = $v['v1'];
-      $set['dt'] = datesql(substr($v['v2'],0,-3), 1);
-      $set['phone'] = $phone;
-      $set['type'] = $v['v4'];
-      $set['duration'] = $v['v5'];
-      $set['name'] = (isset($v['v6']) ? $v['v6'] : '');
-      d($set);
-
-      //db_write(array('table'=>'call', 'set'=>$set));
-      }
-
-
-    }
-
-
-  }
-*/
-
-
-
-
-  // ---------------------------------------------- move phones from people -------------------------------------------------- //
-/*
-if ($act == 'mfp') {
-  $phone = db_read(array(
-    'table' => 'people',
-    'col' => array('id', 'phone'),
-    //'where' => '',
-    'key' => 'id',
-    ));
-  //d($phone);
-
-  foreach ($phone as $k=>$v) {
-    if (!$v)  continue;
-
-    $phonee = explode(',', $v['phone']);
-    foreach ($phonee as $vv) {
-      $vv = trim($vv);
-      if (isset($vv[7]) && isset($vv[10]) && $vv[7] == '-' && $vv[10] == '-') {
-        b('<p>'.$vv.' +');
-        db_write(array('table'=>'phone', 'set'=>array(
-          'pid' => $k,
-          'num' => filter_n($vv),
-          'desc' => '',
-          )));
-        }
-      else {
-        b('<p>'.$vv.' ----');
-        }
-
-      }
-    }
-
-  }
-*/
 
 
 ?>

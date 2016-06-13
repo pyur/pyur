@@ -13,7 +13,6 @@ $body = '';
 $ajax = FALSE;
 
 include 'l/lib.php';
-db_open();
 
 
 
@@ -59,9 +58,10 @@ if (!$ajax) {
   echo '<meta charset="UTF-8">';
   echo '<meta name="robots" content="none">';
   echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">';
-  echo '<link rel="StyleSheet" type="text/css" href="/s.css">';
-  echo '<script type="text/javascript" src="/j.js"></script>';
-  echo '<script>var mod = "'.$mod.'";</script>';
+  echo '<script>if (localStorage.v != (v=1)) {var u = document.createElement(\'SCRIPT\');  u.src = \'/res.php\';  document.head.appendChild(u);}</script>';
+  echo '<script>var css = document.createElement(\'STYLE\');  css.innerHTML = localStorage.css;  document.head.appendChild(css);</script>'."\r\n";
+  echo '<script>eval(localStorage.js);</script>';
+  echo '<script>var mod = \''.$mod.'\';</script>';
 
   echo '</head><body>';
   }

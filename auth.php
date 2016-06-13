@@ -17,6 +17,7 @@ function authorization() {
   global $mod;
   global $curr;
   global $modules;
+  global $db;
 
 
 
@@ -24,12 +25,13 @@ function authorization() {
 
   $login = '';
   $pass = '';
-  $auth = array('id' => 0,
-                'desc' => '',
-                'state' => 1,
-                'perm' => '',  // module1:perm1,perm2,perm3;module2:perm3;module5
-                'sid' => 0,
-                );
+  $auth = array(
+    'id' => 0,
+    'desc' => '',
+    'state' => 1,
+    'perm' => '',  // module1:perm1,perm2,perm3;module2:perm3;module5
+    'sid' => 0,
+    );
 
   //  state:
   // 1  - sess exists
@@ -47,55 +49,36 @@ function authorization() {
 
 
 
-    // ---- DoS filter --------------------------------------------------------------------------- //
-/*
-    // -- `IP` filter -- //
-  $remote_addr = explode('.', (isset($_SERVER['REMOTE_ADDR'])?$_SERVER['REMOTE_ADDR']:'0.0.0.0') );
-  $remote_addr = $remote_addr[0] * 16777216 + $remote_addr[1] * 65536 + $remote_addr[2] * 256 + $remote_addr[3];
-
-  //$result = db_read('login_ip', array('date', 'count'), '`ip` = '.$remote_addr);
-  $result = db_read(array('table'=>'login_ip', 'col'=>array('date', 'count'), 'where'=>'`ip` = '.$remote_addr));
-  if ($result) {
-    //$db = mysql_fetch_array($result, MYSQL_ASSOC);
-    $auth_ip_date = datesqltime($result['date']);
-    $auth_ip_count = $result['count'];
-
-    if ($auth_ip_count > 15)  $auth['state'] = 16;
-    }
-  else {
-    $result = db_write(array('table'=>'login_ip', 'set'=>array('ip' => $remote_addr, 'count' => 0));
-    $auth_ip_date = $curr['time'];
-    $auth_ip_count = 0;
-    }
-*/
 
 
 
 
     // ------------------------------------ read COOKIE ------------------------------------- //
 
-  if (cookieb('bdsx_sid')) {
-    $sess = db_read(array('table' => 'sess',
-                          'col' => array('id', 'user', '@ip', 'ua'),
-                          'where' => array('`sid` = UNHEX(\''.cookieh('bdsx_sid').'\')',
-                                           '`stat` = 0',
-                                           ),
-                          ));
+  if (cookieb('s')) {
+    $sess = $db->
+      table('sess')->
+      col('id', 'user', 'ip', 'ua')->
+      where('`stat` = 0', '`sid` = ?')->
+      wa(unhex(cookieh('s')))->
+      r();
+
     if ($sess) {
       $auth['sid'] = $sess['id'];
       $ua = substr($_SERVER['HTTP_USER_AGENT'],0,512);
+      $ipn = inet_aton($_SERVER['REMOTE_ADDR']);
       $set = array();
       $set['datel'] = $curr['datetime'];
-      if ($sess['@ip'] != $_SERVER['REMOTE_ADDR'])  $set['@ip'] = $_SERVER['REMOTE_ADDR'];
+      if ($sess['ip'] != $ipn)  $set['ip'] = $ipn;
       if ($sess['ua'] != $ua)  $set['ua'] = $ua;
-      db_write(array('table'=>'sess', 'set'=>$set, 'where'=>'`sid` = UNHEX(\''.cookieh('bdsx_sid').'\')'));
+      $db->table('sess')->set($set)->where('`sid` = ?')->wa(unhex(cookieh('s')))->u();
       $sess = $sess['user'];
       }
 
     else {
       header ("Cache-Control: no-cache, must-revalidate");
       header ("Expires: Thu, 17 Apr 1991 12:00:00 GMT");
-      setcookie('bdsx_sid', '', time()-60*60, '/');
+      setcookie('s', '', time()-60*60, '/');
       $auth['state'] = 4;
       }
     }
@@ -131,14 +114,11 @@ function authorization() {
 
   if ($auth['state'] == 1) {
 
-    $user = db_read(array('table' => array('user', 'user_cat'),
-                          'col' => array('user`.`name',
-                                         'user_cat`.`perm',
-                                         ),
-                          'where' => array('`user`.`id` = \''.$sess.'\'',
-                                           '`user_cat`.`id` = `user`.`cat`',
-                                           ),
-                          ));
+    $user = $db->
+      table('user', 'user_cat')->
+      col('user`.`name', 'user_cat`.`perm')->
+      where('`user`.`id` = '.$sess, '`user_cat`.`id` = `user`.`cat`')->
+      r();
 
     if ($user) {
       $auth['id'] = $sess;
@@ -152,7 +132,7 @@ function authorization() {
     }
 
 
-  apache_note('userx', $auth['id']);
+  apache_note('sid', $auth['sid']);
 
 
 
@@ -213,42 +193,9 @@ function authorization() {
 
 
 
-/*
-    // -------- bruteforce control -------- //
-  if ($auth['state'] == 4 && $auth_ip_date > ($curr['time']-30) ) {
-      // ---- increment `count` on wrong password ---- //
-    $result = db_write(array('table'=>'login_ip', 'set'=>array('date' => datesql($curr['time'],1), 'count' => $auth_ip_count+1), 'where'=>'`ip` = '.$remote_addr));
-    }
-
-  elseif ($auth_ip_count && $auth_ip_date < ($curr['time']-3600) ) {
-      // ---- reset after 1 hour cooldown ---- //
-    $result = db_write(array('table'=>'login_ip', 'set'=>array('date' => datesql($curr['time'],1), 'count' => 0), 'where'=>'`ip` = '.$remote_addr));
-    }
-*/
 
 
 
-    // -------------------------------------------------- activity log rotate -------------------------------------------------------- //
-/*
-    // SELECT `id`, COUNT(`id`) as `count` FROM `log_rotate` LIMIT 1
-  $log_rotate = db_read(array('table' => 'log_rotate',
-                              'col' => array('id', '!COUNT(`id`) as `count`'),
-                              //verbose=>1
-                              ));
-
-  if ($log_rotate['count'] > 1999) {
-    $query  = 'DELETE FROM `log_rotate` ORDER BY `id` LIMIT '.($log_rotate['count'] - 1999);
-    mysql_query($query);
-    }
-
-  db_write(array('table'=>'log_rotate',
-                 'set' => array('host' => $remote_addr,
-                                'time'=>date('Y-m-d H:i:s', $_SERVER['REQUEST_TIME']),
-                                'user' => $auth['userx'],
-                                'request' => $_SERVER['REQUEST_URI'],
-                                )));
-*/
-    // -------------------------------------------------- end: activity log rotate -------------------------------------------------------- //
 
 
 

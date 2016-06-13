@@ -12,7 +12,7 @@ if (!isset($body))  die ('error: this is a pluggable module and cannot be used s
 
   // -------------------------------- login promt ------------------------------------ //
 
-if (!postb('f_login')) {
+if (!postb('login')) {
 
   b('<p class="h1">Авторизация</p>');
   b();
@@ -53,13 +53,13 @@ return  false;
   b('<tr><td>');
   b('Логин:');
   b('<td>');
-  b(form_t('@f_login,login', '', 200));
+  b(form_t('@login,login', '', 200));
 
 
   b('<tr><td style="padding: 0;">');
   b('Пароль:');
   b('<td style="padding: 0;">');
-  b('<input id="password" name="f_password" type="password" style="width: 200px;">');
+  b('<input id="password" name="password" type="password" style="width: 200px;">');
 
   b('<tr><td><td>');
   b('<input name="fshp" type="checkbox"'.(post('fshp')?' checked':''));
@@ -70,7 +70,7 @@ return  false;
   b('<tr>');
   b('<td class="t" colspan="2" style="font-weight: normal;">');
   b('Сохранить пароль ');
-  b('<input name="f_savepassword" type="checkbox" checked>');
+  b('<input name="savepassword" type="checkbox" checked>');
 
 
   b('</table>');
@@ -86,9 +86,10 @@ return  false;
 
 else {
   $ajax = TRUE;
+  //http_response_code(418);
 
-  $login = post('f_login');
-  $pass = hash('sha512', post('f_password'));
+  $login = post('login');
+  $pass = hash('sha512', post('password'));
 
 
   if ($login) {
@@ -112,15 +113,15 @@ else {
 
     if (!$user_id) {
 
-      $user = db_read(array('table' => 'user',
-                            'col' => array('id', '#pass'),
-                            'where' => array('`login` = \''.$login.'\'',
-                                             '`cat` != 0',
-                                             ),
-                            ));
+      $user = $db->
+        table('user')->
+        col('id', 'pass')->
+        where('`login` = ?', '`cat` != 0')->
+        wa($login)->
+        r();
 
       if ($user) {
-        if (strtolower($user['#pass']) == $pass) {
+        if (tohex($user['pass']) == $pass) {
           $user_id = $user['id'];
           }
         }
@@ -130,23 +131,23 @@ else {
     if ($user_id) {
       while(1) {
         $sid = md5(microtime().$_SERVER['REMOTE_ADDR'].$_SERVER['HTTP_USER_AGENT']);
-        if (!db_read(array('table'=>'sess', 'col'=>'id', 'where'=>'`sid`=UNHEX(\''.$sid.'\')')))  break;
+        if (!$db->table('sess')->col('id')->where('`sid`= ?')->wa(unhex($sid))->r() )  break;
         }
 
       $set = array();
-      $set['#sid'] = $sid;
+      $set['sid'] = unhex($sid);
       $set['stat'] = 0;
       $set['user'] = $user_id;
-      $set['@ip'] = $_SERVER['REMOTE_ADDR'];
+      $set['ip'] = inet_aton($_SERVER['REMOTE_ADDR']);
       $set['ua'] = substr($_SERVER['HTTP_USER_AGENT'],0,512);
       $set['date'] = $curr['datetime'];
       $set['datel'] = $curr['datetime'];
-      db_write(array('table'=>'sess', 'set'=>$set));
+      $db->table('sess')->set($set)->i();
 
         // -------- set COOKIE -------- //
       header ("Cache-Control: no-cache, must-revalidate");
       header ("Expires: Thu, 17 Apr 1991 12:00:00 GMT");  // Wed
-      setcookie ('bdsx_sid', $sid, ( post('f_savepassword') ? time()+60*60*24*30*12*5 : 0), '/');
+      setcookie ('s', $sid, ( post('savepassword') ? time()+60*60*24*30*12*5 : 0), '/');
 
       b(1);
       }

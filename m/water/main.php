@@ -22,25 +22,25 @@ if (!$act) {
   $gmon = datee($gdate,'m');
   $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
 
-  $where = array('`water`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                 '`water`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-                 );
+  $where = array(
+    '`water`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+    '`water`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
+    );
 
-  $water = db_read(array('table' => 'water',
-                         'col' => array('id', 'dt', 'val', 'val2', 'desc'),
-                         'where' => $where,
-                         'order' => '`dt`',
-                         'key' => 'id',
-                         ));
+  $water = $db->
+    table('water')->
+    col('id', 'dt', 'val', 'val2', 'desc')->
+    where($where)->
+    order('`dt`')->
+    key('id')->
+    r();
 
-  $prev = db_read(array('table' => 'water',
-                        'col' => array('val','val2'),
-                        'where' => '`water`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                        'order' => '`dt` DESC',
-                        ));
-
-
-
+  $prev = $db->
+    table('water')->
+    col('val','val2')->
+    where('`water`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'')->
+    order('`dt` DESC')->
+    r();
 
 
     // ---- submenu ---- //
@@ -187,11 +187,12 @@ ch.water([['.implode(',',$chart_c).'],['.implode(',',$chart_h).']]);
 
 if ($act == 'wte' && p('edit') ) {
 
-  $water = array('dt' => $curr['datetime'],
-                 'val' => 0,
-                 'val2' => 0,
-                 'desc' => '',
-                 );
+  $water = array(
+    'dt' => $curr['datetime'],
+    'val' => 0,
+    'val2' => 0,
+    'desc' => '',
+    );
   $water['dt'][17] = '0';
   $water['dt'][18] = '0';
 
@@ -199,16 +200,18 @@ if ($act == 'wte' && p('edit') ) {
     $col = array();
     foreach ($water as $k=>$v)  $col[] = $k;
 
-    $water = db_read(array('table' => 'water',
-                           'col' => $col,
-                           'where' => '`id` = '.$gwtr,
-                           ));
+    $water = $db->
+      table('water')->
+      col($col)->
+      where('`id` = '.$gwtr)->
+      r();
     }
   else {
-    $last = db_read(array('table' => 'water',
-                          'col' => array('val', 'val2'),
-                          'order' => '`dt` DESC',
-                          ));
+    $last = $db->
+      table('water')->
+      col('val', 'val2')->
+      order('`dt` DESC')->
+      r();
 
     $water['val'] = $last['val'];
     $water['val2'] = $last['val2'];
@@ -231,9 +234,9 @@ if ($act == 'wte' && p('edit') ) {
   b();
 
 
-  b(form('water', '/'.$mod.'/wtu/?'
-    .($gwtr ? '&wtr='.$gwtr : '')
-    ));
+  b(form('water', '/'.$mod.'/wtu/', array(
+    $gwtr ? 'wtr='.$gwtr : ''
+    )));
 
   b('<table class="edt">');
 
@@ -292,11 +295,11 @@ if ($act == 'wtu' && p('edit') ) {
     $set['desc'] = post('f_water_desc');
 
     if ($gwtr) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gwtr = db_write(array('table'=>$table, 'set'=>$set));
+      $gwtr = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -305,13 +308,13 @@ if ($act == 'wtu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gwtr && p()) {
+    $pdate = $db->
+      table('water')->
+      col('!DATE(`dt`)')->
+      where($where)->
+      r();
 
-    $pdate = db_read(array('table' => 'water',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
-
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)-d();
 
     b('/'.$mod.'/?date='.$pdate);
     }  // end: delete

@@ -256,8 +256,8 @@ function  css_table ($p, $name='lst') {
       }
 
     if ($kk != 1) {
-      $min = ($kk ? ((int)$kk - 20) : 0);
-      $max = (isset($pn[$kk]) ? ($pn[$kk] - 21) : 0);
+      $min = ($kk ? ((int)$kk) : 0);
+      $max = (isset($pn[$kk]) ? ($pn[$kk] - 1) : 0);
       $tmp = array();
       if ($min)  $tmp[] = '(min-width: '.$min.'px)';
       if ($max)  $tmp[] = '(max-width: '.$max.'px)';
@@ -282,8 +282,22 @@ function  css_table ($p, $name='lst') {
           continue;
           }
 
+
         $align = ' text-align: center;';
         $padding = ' padding: 0;';
+
+        if ($ve[0][0] == 'l') {
+          $ve[0] = substr($ve[0],1);
+          $align = '';
+          //$padding = ' padding: 0 0 0 2px;';
+          }
+
+        if ($ve[0][0] == 'r') {
+          $ve[0] = substr($ve[0],1);
+          $align = ' text-align: right;';
+          $padding = ' padding: 0 2px 0 0;';
+          }
+
         if (isset($ve[1]))  $padding = ' padding: '.$ve[1].';';
         $v = $ve[0];
         }
@@ -362,7 +376,7 @@ function  icona ($p, $px = 'i') {
       if ($i !== FALSE) {
         $x = ($i % 64) * 16;
         $y = floor($i / 64) * 16  + $modules_h;
-        b('a.'.$px.$k.' {display: inline-block; width: 16px; height: 16px; margin: 0 2px 0 0; vertical-align: bottom; background-image: url(\'/c/s.png\'); background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
+        b('a.'.$px.$k.' {background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';}'."\n");
         }
       }
 
@@ -375,14 +389,17 @@ function  icona ($p, $px = 'i') {
     $r = '';
     if ($p[0] == '!') {
       $p = substr($p, 1);
-      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" href="'.$p.'" target="_blank"></a>';
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).' s" href="'.$p.'" target="_blank"></a>';
       }
     elseif ($p[0] == '#') {
       $p = substr($p, 1);
-      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" onclick="'.$p.'"></a>';
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).' s" onclick="'.$p.'"></a>';
+      }
+    elseif ($p == '-') {
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).' s d"></a>';
       }
     else {
-      $r = '<a class="'.$px.($n[$px]%$m[$px]).'" href="'.$p.'"></a>';
+      $r = '<a class="'.$px.($n[$px]%$m[$px]).' s" href="'.$p.'"></a>';
       }
     return $r;
     }

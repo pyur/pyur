@@ -31,32 +31,37 @@ if (!$act) {
   $weeks = round((datesqltime($dateend) - datesqltime($datebeg) +86400) / (86400 * 7));
 
 
-  $where = array('`visit`.`dt` >= \''.$datebeg.' 00:00:00\'',  // datesql($gyear, $gmon, 1, 0, 0, 0)
-                 '`visit`.`dt` <= \''.$dateend.' 23:59:59\'',  // datesql($gyear, $gmon, $gmdays, 23, 59, 59)
-                 );
+  $where = array(
+    '`visit`.`dt` >= \''.$datebeg.' 00:00:00\'',  // datesql($gyear, $gmon, 1, 0, 0, 0)
+    '`visit`.`dt` <= \''.$dateend.' 23:59:59\'',  // datesql($gyear, $gmon, $gmdays, 23, 59, 59)
+    );
 
-  $visit = db_read(array('table' => 'visit',
-                         'col' => array('id', 'dt', 'people', 'place', 'lat', 'lon', 'desc', '!DATE(`dt`) AS `dated`'),
-                         'where' => $where,
-                         'order' => '`dt`',
-                         'key' => array('dated', 'id'),
-                         ));
+  $visit = $db->
+    table('visit')->
+    col('id', 'dt', 'people', 'place', 'lat', 'lon', 'desc', '!DATE(`dt`) AS `dated`')->
+    where($where)->
+    order('`dt`')->
+    key('dated', 'id')->
+    r();
+
   $where2 = $where;
   $where2[] = '`people`.`id` = `visit`.`people`';
-  $people = db_read(array('table' => array('people', 'visit'),
-                          'col' => array('people`.`id', 'people`.`surname', 'people`.`name', 'people`.`otchestvo'),
-                          'where' => $where2,
-                          'key' => 'id',
-                          ));
+  $people = $db->
+    table('people', 'visit')->
+    col('people`.`id', 'people`.`surname', 'people`.`name', 'people`.`otchestvo')->
+    where($where2)->
+    key('id')->
+    r();
 
   $where2 = $where;
   $where2[] = '`place`.`id` = `visit`.`place`';
-  $place = db_read(array('table' => array('place', 'visit'),
-                         'col' => array('place`.`id', 'place`.`desc'),
-                         'where' => $where2,
-                         'key' => 'id',
-                         'value' => 'desc',
-                         ));
+  $place = $db->
+    table('place', 'visit')->
+    col('place`.`id', 'place`.`desc')->
+    where($where2)->
+    key('id')->
+    value('desc')->
+    r();
 
 
     // ---- submenu ---- //
@@ -183,44 +188,39 @@ b('
 
 if ($act == 'vse' && p('edit') ) {
 
-  $place = db_read(array('table' => 'place',
-                         'col' => array('id', 'desc'),
-                         'key' => 'id',
-                         'value' => 'desc',
-                         ));
+  $place = $db->
+    table('place')->
+    col('id', 'desc')->
+    key('id')->
+    value('desc')->
+    r();
 
   $place = array_reverse($place, true);
   $place[0] = '- - - - - - - - -';
   $place = array_reverse($place, true);
 
 
-  $visit = array('dt' => $curr['datetime'],
-                 'people' => 0,
-                 'place' => 0,
-                 'lat' => 0,
-                 'lon' => 0,
-                 'desc' => '',
-                 );
+  $visit = array(
+    'dt' => $curr['datetime'],
+    'people' => 0,
+    'place' => 0,
+    'lat' => 0,
+    'lon' => 0,
+    'desc' => '',
+    );
   $visit['dt'][17] = '0';
   $visit['dt'][18] = '0';
 
   if ($gvst) {
     $col = array();
     foreach ($visit as $k=>$v)  $col[] = $k;
-
-    $visit = db_read(array('table' => 'visit',
-                           'col' => $col,
-                           'where' => '`id` = '.$gvst,
-                           ));
+    $visit = $db->table('visit')->col($col)->where('`id` = '.$gvst)->r();
     }
 
 
   $people = array(0 => '- - - - - - - - -');
   if ($visit['people']) {
-    $people1 = db_read(array('table' => 'people',
-                             'col' => array('surname', 'name', 'otchestvo'),
-                             'where' => '`id` = '.$visit['people'],
-                             ));
+    $people1 = $db->table('people')->col('surname', 'name', 'otchestvo')->where('`id` = '.$visit['people'])->r();
     $people[$visit['people']] = fiof($people1['surname'], $people1['name'], $people1['otchestvo']);
     }
 
@@ -241,9 +241,9 @@ if ($act == 'vse' && p('edit') ) {
   b();
 
 
-  b(form('visit', '/'.$mod.'/vsu/?'
-    .($gvst ? '&vst='.$gvst : '')
-    ));
+  b(form('visit', '/'.$mod.'/vsu/', array(
+    $gvst ? 'vst='.$gvst : '',
+    )));
 
   b('<table class="edt">');
 
@@ -361,11 +361,11 @@ if ($act == 'vsu' && p('edit') ) {
 
 
     if ($gvst) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gvst = db_write(array('table'=>$table, 'set'=>$set));
+      $gvst = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -374,12 +374,9 @@ if ($act == 'vsu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gvst && p()) {
-    $pdate = db_read(array('table' => 'visit',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
+    $pdate = $db->table('visit')->col('!DATE(`dt`)')->where($where)->r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
   
     //if ($result)  b('ok');
     //else          b('failed');
@@ -412,23 +409,23 @@ if ($act == 'ph') {
     if (isset($gsch[1]))  $where[] = '`name` LIKE \''.$gsch[1].'%\'';
     if (isset($gsch[2]))  $where[] = '`otchestvo` LIKE \''.$gsch[2].'%\'';
 
-    $people = db_read(array('table' => 'people',
-                            'col' => array('id', 'surname', 'name', 'otchestvo'),
-                            'where' => $where,
-                            'order' => array('`surname`', '`name`', '`otchestvo`'),
-                            'limit' => '100',
-
-                            'key' => 'id',
-                            ));
+    $people = $db->
+      table('people')->
+      col('id', 'surname', 'name', 'otchestvo')->
+      where($where)->
+      order('`surname`', '`name`', '`otchestvo`')->
+      limit('100')->
+      key('id')->
+      r();
 
     $where1 = $where;
     $where1[] = '`people_addr`.`pid` = `people`.`id`';
-    $people_addr = db_read(array('table' => array('people', 'people_addr'),
-                                 'col' => array('people_addr`.`id', 'people_addr`.`pid', 'people_addr`.`lat', 'people_addr`.`lon'),
-                                 'where' => $where1,
-
-                                 'key' => 'pid',  // будет перезатираться последним
-                                 ));
+    $people_addr = $db->
+      table('people', 'people_addr')->
+      col('people_addr`.`id', 'people_addr`.`pid', 'people_addr`.`lat', 'people_addr`.`lon')->
+      where($where1)->
+      key('pid')->  // будет перезатираться последним
+      r();
 
 
       // -------------------------------- output -------------------------------- //
@@ -534,12 +531,13 @@ if ($act == 'cdr') {
 
 if ($act == 'plc') {
 
-  $place = db_read(array('table' => 'place',
-                         'col' => array('id', 'lat', 'lon', 'desc'),
-                         //'where' => $where,
-                         //'order' => '`dt`',
-                         'key' => 'id',
-                         ));
+  $place = $db->
+    table('place')->
+    col('id', 'lat', 'lon', 'desc')->
+    //'where($where,
+    //'order('`dt`',
+    key('id')->
+    r();
 
 
     // ---- submenu ---- //
@@ -600,19 +598,16 @@ if ($act == 'plc') {
 
 if ($act == 'ple' && p('edit') ) {
 
-  $place = array('lat' => 0,
-                 'lon' => 0,
-                 'desc' => '',
-                 );
+  $place = array(
+    'lat' => 0,
+    'lon' => 0,
+    'desc' => '',
+    );
 
   if ($gplc) {
     $col = array();
     foreach ($place as $k=>$v)  $col[] = $k;
-
-    $place = db_read(array('table' => 'place',
-                           'col' => $col,
-                           'where' => '`id` = '.$gplc,
-                           ));
+    $place = $db->table('place')->col($col)->where('`id` = '.$gplc)->r();
     }
 
 
@@ -632,9 +627,9 @@ if ($act == 'ple' && p('edit') ) {
   b();
 
 
-  b(form('place', '/'.$mod.'/plu/?'
-    .($gplc ? '&plc='.$gplc : '')
-    ));
+  b(form('place', '/'.$mod.'/plu/', array(
+    $gplc ? 'plc='.$gplc : '',
+    )));
 
   b('<table class="edt">');
 
@@ -682,11 +677,11 @@ if ($act == 'plu' && p('edit') ) {
     $set['desc'] = post('f_place_desc');
 
     if ($gplc) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gplc = db_write(array('table'=>$table, 'set'=>$set));
+      $gplc = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/plc/');
@@ -695,12 +690,9 @@ if ($act == 'plu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gplc && p()) {
-    $pdate = db_read(array('table' => 'place',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
+    $pdate = $db->table('place')->col('!DATE(`dt`)')->where($where)->r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/plc/');
     }  // end: delete
@@ -731,17 +723,14 @@ if ($act == 'pgr') {
 if ($act == 'grw') {
   $ajax = TRUE;
 
-  $visit = db_read(array('table' => 'visit',
-                         'col' => array('id', 'dt',
-                                        '!MONTH(`dt`) AS `dt_mon`', '!DAYOFMONTH(`dt`) AS `dt_day`',
-                                        ),
-                         'where' => array('`place` = '.$gplc,
-                                          '`dt` >= \''.$gyear.'-01-01 00:00:00\'',
-                                          '`dt` <= \''.$gyear.'-12-31 23:59:59\'',
-                                          ),
-
-                         'key' => array('dt_mon', 'dt_day', 'id'),
-                         ));
+  $visit = $db->
+    table('visit')->
+    col('id', 'dt','!MONTH(`dt`) AS `dt_mon`', '!DAYOFMONTH(`dt`) AS `dt_day`')->
+    where('`place` = '.$gplc,
+          '`dt` >= \''.$gyear.'-01-01 00:00:00\'',
+          '`dt` <= \''.$gyear.'-12-31 23:59:59\'')->
+    key('dt_mon', 'dt_day', 'id')->
+    r();
 
   $size = 12;
   $spacing = ($size-1) - 2;
@@ -816,10 +805,11 @@ if ($act == 'mpv') {
   b('</head><body style="padding:0; margin:0;">');
 
   if ($gplc) {
-    $place = db_read(array('table' => 'place',
-                           'col' => array('lat', 'lon'),
-                           'where' => '`id` = '.$gplc,
-                           ));
+    $place = $db->
+      table('place')->
+      col('lat', 'lon')->
+      where('`id` = '.$gplc)->
+      r();
     }
   elseif ($glat) {
     $place = array('lat'=>$glat, 'lon'=>$glon);
@@ -870,16 +860,16 @@ if ($act == 'mpp') {
   $pwlon = geooi(post('wlon'));
 
 
-  $markers = db_read(array('table' => 'place',
-                           'col' => array('id', 'lat', 'lon', 'desc'),
-                           'where' => array('`lat` < '.$pnlat,
-                                            '`lat` > '.$pslat,
-                                            '`lon` > '.$pwlon,
-                                            '`lon` < '.$pelon,
-                                            ),
-                           'limit' => 300,
-                           'key' => 'id',
-                           ));
+  $markers = $db->
+    table('place')->
+    col('id', 'lat', 'lon', 'desc')->
+    where('`lat` < '.$pnlat,
+          '`lat` > '.$pslat,
+          '`lon` > '.$pwlon,
+          '`lon` < '.$pelon)->
+    limit(300)->
+    key('id')->
+    r();
 
   $obj = array();
   if ($markers) {

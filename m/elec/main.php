@@ -28,20 +28,20 @@ if (!$act) {
     '`elec`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
     );
 
-  $elec = db_read(array(
-    'table' => 'elec',
-    'col' => array('id', 'dt', 'val', 'desc'),
-    'where' => $where,
-    'order' => '`dt`',
-    'key' => 'id',
-    ));
+  $elec = $db->
+    table('elec')->
+    col('id', 'dt', 'val', 'desc')->
+    where($where)->
+    order('`dt`')->
+    key('id')->
+    r();
 
-  $prev = db_read(array(
-    'table' => 'elec',
-    'col' => 'val',
-    'where' => '`elec`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-    'order' => '`dt` DESC',
-    ));
+  $prev = $db->
+    table('elec')->
+    col('val')->
+    where('`elec`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'')->
+    order('`dt` DESC')->
+    r();
 
 
 
@@ -189,18 +189,18 @@ if ($act == 'ele' && p('edit') ) {
     $col = array();
     foreach ($elec as $k=>$v)  $col[] = $k;
 
-    $elec = db_read(array(
-      'table' => 'elec',
-      'col' => $col,
-      'where' => '`id` = '.$gelc,
-      ));
+    $elec = $db->
+      table('elec')->
+      col($col)->
+      where('`id` = '.$gelc)->
+      r();
     }
   else {
-    $last = db_read(array(
-      'table' => 'elec',
-      'col' => 'val',
-      'order' => '`dt` DESC',
-      ));
+    $last = $db->
+      table('elec')->
+      col('val')->
+      order('`dt` DESC')->
+      r();
 
     $elec['val'] = $last;
     }
@@ -275,11 +275,11 @@ if ($act == 'elu' && p('edit') ) {
     $set['desc'] = post('f_elec_desc');
 
     if ($gelc) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gelc = db_write(array('table'=>$table, 'set'=>$set));
+      $gelc = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -288,13 +288,9 @@ if ($act == 'elu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gelc && p()) {
-    $pdate = db_read(array(
-      'table' => $table,
-      'col' => '!DATE(`dt`)',
-      'where' => $where,
-      ));
+    $pdate = $db->table($table)->col('!DATE(`dt`)')->where($where)->r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/?date='.$pdate);
     }  // end: delete
@@ -427,12 +423,13 @@ if ($act == 'rr') {
       }
     }
 
-  $row = db_read(array('table' => $rq['table'],
-                       'col' => $rq['col'],  // array('id', 'dt', 'val', 'desc'),
-                       'where' => $where,
-                       'order' => (isset($rq['order']) ? $rq['order'] : ''),
-                       'key' => (isset($rq['key']) ? $rq['key'] : NULL),
-                       ));
+  $row = $db->
+    table($rq['table'])->
+    col($rq['col'])->
+    where($where)->
+    order(isset($rq['order']) ? $rq['order'] : FALSE)->
+    key(isset($rq['key']) ? $rq['key'] : FALSE)->
+    r();
 
 
     // ---------------- format answer ---------------- //

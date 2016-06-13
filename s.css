@@ -1,5 +1,5 @@
 body {
-	font-family: Tahoma, Arial, sans-serif;
+	font-family: 'Tahoma', 'Arial', sans-serif;
 	font-size: 6pt;
 	background-color: #FFF;
 	}
@@ -76,24 +76,20 @@ div.menub {
 
 div.menui {
 	display: inline-block;
-	vertical-align: top;
+	vertical-align: middle;
 	width: 32px;
 	height: 32px;
-	background-image: url('/c/s.png');
+	/*background-image: url('/c/s.png');*/
 	}
+/*~div.menui, div.smenui, hr, a.s {background-image: url(data:image/png;base64,~*~);}~*/
 
 div.menut {
 	display: inline-block;
 	margin: 0 2px 0 4px;
-	vertical-align: top;
-	}
-td.menut {
-	height: 32px;
+	vertical-align: middle;
 	font-size: 12pt;
 	white-space: nowrap;
-	text-align: left;
 	line-height: 100%;
-	border: none;
 	}
 
 a.menu {
@@ -126,7 +122,7 @@ div.smenui {
 	vertical-align: -3px;
 	width: 16px;
 	height: 16px;
-	background-image: url('/c/s.png');
+	/*background-image: url('/c/s.png');*/
 	}
 
 div.smenut {
@@ -221,23 +217,14 @@ div.cbubble {
  /* end: context menu/bubble */
 
  /* icon */
-/*
-i {
-	display: inline-block;
-	width: 16px;
-	height: 16px;
-	vertical-align: -3px;
-	background-image: url('c/s.png');
-	}
-*/
+
 hr {
 	display: inline-block;
 	border: none;
 	width: 16px;
 	height: 16px;
 	margin: 0;
-	/*vertical-align: bottom;*/
-	background-image: url('c/s.png');
+	/*background-image: url('c/s.png');*/
 	}
 
 hr.h {
@@ -287,6 +274,16 @@ a:focus {outline: none;}
 a.g	{color: #006600;}
 a.gl	{color: #80BB80;}
 a.k	{color: #000;}
+a.t	{color: inherit;}
+a.s	{
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	margin: 0 2px 0 0;
+	vertical-align: bottom;
+	/*background-image: url('/c/s.png');*/
+	}
+a.d	{opacity: 0.3;}
 
 
 
@@ -384,12 +381,10 @@ p.c {	text-align: center;}
 .f28	{font-size: 28pt;}
 .f29	{font-size: 29pt;}
 .f30	{font-size: 30pt;}
-/* font-spacings */
-.s1	{letter-spacing: -1px;}
-.s2	{letter-spacing: -2px;}
 
 
 /* modifyers */
+/*
 .l {	text-align: left;}
 .c {	text-align: center;}
 .r {	text-align: right;}
@@ -400,6 +395,7 @@ p.c {	text-align: center;}
 .ut {	border-bottom: 1px dotted black;}
 .s {	text-decoration: line-through;}
 .h {	display: none;}
+*/
 
 
 @media print {

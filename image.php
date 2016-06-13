@@ -12,7 +12,6 @@ $body = '';
 $redirect = '';
 
 include 'l/lib.php';
-db_open();
 
 
 

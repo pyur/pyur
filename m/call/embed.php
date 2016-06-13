@@ -68,14 +68,12 @@ if ($act == 'mfa') {
     $phone = filter_n($v['phone']);
     $phone = substr($phone,-10,10);
 
-    $check = db_read(array(
-      'table' => 'call',
-      'col' => 'id',
-      'where' => array(
-        '`imei` = '.$imei,
-        '`pid` = '.$v['id'],
-        ),
-      ));
+    $check = $db->
+      table('call')->
+      col('id')->
+      where('`imei` = '.$imei,
+            '`pid` = '.$v['id'])->
+      r();
 
     if (!$check) {
       $duration = 0;
@@ -85,14 +83,16 @@ if ($act == 'mfa') {
       $set = array();
       $set['imei'] = $imei;
       $set['pid'] = $v['id'];
-      $set['dt'] = datesql(substr($v['dt'],0,-3), 1);
+      $dt = datesql(substr($v['dt'],0,-3), 1);
+      $set['date'] = substr($dt, 0,10);
+      $set['time'] = substr($dt, 11,8);
       $set['phone'] = $phone;
       $set['type'] = $v['type'];
       $set['duration'] = $duration;
       $set['name'] = (isset($v['name']) ? $v['name'] : '');
       //d($set);
 
-      db_write(array('table'=>'call', 'set'=>$set));
+      $db->table('call')->set($set)->i();
       }
 
 

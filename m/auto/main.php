@@ -23,28 +23,28 @@ if (!$act) {
   $gmon = datee($gdate,'m');
   $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
 
-  $where = array('`auto`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                 '`auto`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-                 );
+  $where = array(
+    '`auto`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+    '`auto`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
+    );
 
-  $auto = db_read(array('table' => 'auto',
-                        'col' => array('id', 'dt', 'val', 'desc'),
-                        'where' => $where,
-                        'order' => '`dt`',
-                        'key' => 'id',
-                        ));
+  $auto = $db->
+    table('auto')->
+    col('id', 'dt', 'val', 'desc')->
+    where($where)->
+    order('`dt`')->
+    key('id')->
+    r();
 
-  $prev = db_read(array('table' => 'auto',
-                        'col' => 'val',
-                        'where' => '`auto`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                        'order' => '`dt` DESC',
-                        ));
-
-
+  $prev = $db->
+    table('auto')->
+    col('val')->
+    where('`auto`.`dt` < \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'')->
+    order('`dt` DESC')->
+    r();
 
 
     // ---- submenu ---- //
-
   $date_prev = datesql(mktime(0,0,0, ($gmon-1),1,$gyear));
   $date_next = datesql(mktime(0,0,0, ($gmon+1),1,$gyear));
 
@@ -55,7 +55,6 @@ if (!$act) {
 
   if (p('edit'))  $submenu['Добавить;plus-button'] = '/'.$mod.'/aue/';
   submenu();
-
     // ---- end: submenu ---- //
 
 
@@ -179,10 +178,11 @@ ch.auto(['.implode(',',$chart).']);
 
 if ($act == 'aue' && p('edit') ) {
 
-  $auto = array('dt' => $curr['datetime'],
-                'val' => 0,
-                'desc' => '',
-                );
+  $auto = array(
+    'dt' => $curr['datetime'],
+    'val' => 0,
+    'desc' => '',
+    );
   $auto['dt'][17] = '0';
   $auto['dt'][18] = '0';
 
@@ -190,16 +190,18 @@ if ($act == 'aue' && p('edit') ) {
     $col = array();
     foreach ($auto as $k=>$v)  $col[] = $k;
 
-    $auto = db_read(array('table' => 'auto',
-                          'col' => $col,
-                          'where' => '`id` = '.$gaut,
-                          ));
+    $auto = $db->
+      table('auto')->
+      col($col)->
+      where('`id` = '.$gaut)->
+      r();
     }
   else {
-    $last = db_read(array('table' => 'auto',
-                          'col' => 'val',
-                          'order' => '`dt` DESC',
-                          ));
+    $last = $db->
+      table('auto')->
+      col('val')->
+      order('`dt` DESC')->
+      r();
 
     $auto['val'] = $last;
     }
@@ -273,11 +275,11 @@ if ($act == 'auu' && p('edit') ) {
     $set['desc'] = post('f_auto_desc');
 
     if ($gaut) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gaut = db_write(array('table'=>$table, 'set'=>$set));
+      $gaut = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -286,12 +288,13 @@ if ($act == 'auu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gaut && p()) {
-    $pdate = db_read(array('table' => 'auto',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
+    $pdate = $db->
+      table('auto')->
+      col('!DATE(`dt`)')->
+      where($where)->
+      r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/?date='.$pdate);
 

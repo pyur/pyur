@@ -2,12 +2,16 @@
 
 /************************************************************************/
 /*  bdsx  v1.oo                                                         */
-/*  © 2014+ Пресняков Юрий Евгеньевич. Все права защищены.              */
+/*  © 2016+ Пресняков Юрий Евгеньевич. Все права защищены.              */
 /************************************************************************/
 
 
 
   // -------------------------------- init -------------------------------- //
+
+//ini_set('display_errors', 0);
+//ini_set('log_errors', 1);
+//ini_set('error_log', 'r/error.log');
 
 $benchmark = array('_start' => microtime(TRUE));
 
@@ -18,8 +22,6 @@ $ajax = FALSE;
 
 
 include 'l/lib.php';
-db_open();
-//db_open('second_db','user','password');
 
 
 
@@ -78,9 +80,7 @@ foreach ($sort as $k) {
   b('<div class="menui" unselectable="on" style="background-position: '.($x?('-'.$x.'px'):'0').' '.($y?('-'.$y.'px'):'0').';"></div>');
 
   b('<div class="menut">');
-  b('<table><tr><td class="menut" unselectable="on">');
   b($v['nameb']);
-  b('</table>');
   b('</div>');
 
   b('</div>');
@@ -121,10 +121,10 @@ if (!$ajax) {
   echo '<meta name="robots" content="none">';
   echo '<meta http-equiv="cache-control" content="no-store">';
   echo '<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">';
-  echo '<link rel="StyleSheet" type="text/css" href="/s.css">';
-  echo '<script type="text/javascript" src="/j.js"></script>';
-  echo '<script>var mod = "'.$mod.'";</script>';
-
+  echo '<script>if (localStorage.v != (v=1)) {var u = document.createElement(\'SCRIPT\');  u.src = \'/res.php\';  document.head.appendChild(u);}</script>';
+  echo '<script>var css = document.createElement(\'STYLE\');  css.innerHTML = localStorage.css;  document.head.appendChild(css);</script>'."\r\n";
+  echo '<script>eval(localStorage.js);</script>';
+  echo '<script>var mod = \''.$mod.'\';</script>';
   //if (file_exists('m/'.$mod.'/style.css'))  echo '<link rel="StyleSheet" type="text/css" href="m/'.$mod.'/style.css">';
   //if (file_exists('m/'.$mod.'/script.js'))  echo '<script type="text/javascript" src="m/'.$mod.'/script.js"></script>';
   echo '</head><body>';

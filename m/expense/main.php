@@ -90,38 +90,40 @@ if (!$act) {
   $gmon = datee($gdate,'m');
   $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
 
-  $where = array('`expense`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                 '`expense`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-                 );
+  $where = array(
+    '`expense`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+    '`expense`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
+    );
 
-  $expense = db_read(array('table' => 'expense',
-                           'col' => array('id', 'dt', 'price', 'store', 'desc'),
-                           'where' => $where,
-                           'order' => '`dt`',
-                           'key' => 'id',
-                           ));
-
-
-  $where_ = $where;
-  $where_[] = '`expense`.`id` = `expense_item`.`p`';
-
-  $expense_item = db_read(array('table' => array('expense', 'expense_item'),
-                                'col' => array('expense`.`id', 'expense_item`.`id` AS `bi_id', 'expense_item`.`price', 'expense_item`.`quantity', 'expense_item`.`type', 'expense_item`.`desc'),
-                                'where' => $where_,
-                                'key' => array('id', 'bi_id'),
-                                ));
+  $expense = $db->
+    table('expense')->
+    col('id', 'dt', 'price', 'store', 'desc')->
+    where($where)->
+    order('`dt`')->
+    key('id')->
+    r();
 
 
-  $where_ = $where;
-  $where_[] = '`expense`.`id` = `expense_doc`.`p`';
+  $where2 = $where;
+  $where2[] = '`expense`.`id` = `expense_item`.`p`';
 
-  $expense_doc = db_read(array('table' => array('expense', 'expense_doc'),
-                               'col' => array('expense`.`id', 'expense_doc`.`id` AS `bd_id', 'expense_doc`.`type'),
-                               'where' => $where_,
-                               'key' => array('id', 'bd_id'),
-                               ));
+  $expense_item = $db->
+    table('expense', 'expense_item')->
+    col('expense`.`id', 'expense_item`.`id` AS `ex_id', 'expense_item`.`price', 'expense_item`.`quantity', 'expense_item`.`type', 'expense_item`.`desc')->
+    where($where2)->
+    key('id', 'ex_id')->
+    r();
 
 
+  $where3 = $where;
+  $where3[] = '`expense`.`id` = `expense_doc`.`p`';
+
+  $expense_doc = $db->
+    table('expense', 'expense_doc')->
+    col('expense`.`id', 'expense_doc`.`id` AS `ex_id', 'expense_doc`.`type')->
+    where($where3)->
+    key('id', 'ex_id')->
+    r();
 
 
     // ---- submenu ---- //
@@ -147,11 +149,13 @@ if (!$act) {
 
 
   if ($expense) {
-    b('<style>
-table.lst td {vertical-align: top;}
-</style>');
     css_table(array(140, 80, 120, 310, '34', 54));
+    b('<style>'."\r\n");
+    b('table.lst td {vertical-align: top;}'."\r\n");
+    b('</style>');
+
     icona(array('pencil-button','plus-button','receipt-text--paper-clip'));
+
 
     b('<table id="expense_table" class="lst f10">');
     b('<tr>');
@@ -406,11 +410,12 @@ if ($act == 'exe' && p('edit') ) {
 
   asort($db_store);
 
-  $expense = array('dt' => $curr['datetime'],
-                   'price' => 0,
-                   'store' => 0,
-                   'desc' => '',
-                   );
+  $expense = array(
+    'dt' => $curr['datetime'],
+    'price' => 0,
+    'store' => 0,
+    'desc' => '',
+    );
   $expense['dt'][17] = '0';
   $expense['dt'][18] = '0';
 
@@ -418,10 +423,11 @@ if ($act == 'exe' && p('edit') ) {
     $col = array();
     foreach ($expense as $k=>$v)  $col[] = $k;
 
-    $expense = db_read(array('table' => 'expense',
-                             'col' => $col,
-                             'where' => '`id` = '.$gexp,
-                             ));
+    $expense = $db->
+      table('expense')->
+      col($col)->
+      where('`id` = '.$gexp)->
+      r();
     }
 
 
@@ -441,9 +447,9 @@ if ($act == 'exe' && p('edit') ) {
   b();
 
 
-  b(form('expense', '/'.$mod.'/exu/?'
-    .($gexp ? '&exp='.$gexp : '')
-    ));
+  b(form('expense', '/'.$mod.'/exu/', array(
+    $gexp ? 'exp='.$gexp : '',
+    )));
 
   b('<table class="edt">');
 
@@ -497,7 +503,7 @@ if ($act == 'exu' && p('edit') ) {
   //  global  $table, $where;
   //  global  $gexp;
   //
-  //  $copy = db_read(array('table' => $table,
+  //  $copy = db_!read(array('table' => $table,
   //                          'col' => array('line', 'phone', 'dt', 'len', 'datex', 'userx'),
   //                          'where' => $where,
   //                          ));
@@ -517,7 +523,7 @@ if ($act == 'exu' && p('edit') ) {
 
     if ($gexp) {
       //if (!p('edit_all')) {
-      //  $expense = db_read(array('table' => 'expense',
+      //  $expense = db_!read(array('table' => 'expense',
       //                          'col' => 'userx',
       //                          'where' => '`id` = '.$gexp,
       //                          ));
@@ -525,11 +531,11 @@ if ($act == 'exu' && p('edit') ) {
       //  }
       //
       //history_copy();
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gexp = db_write(array('table'=>$table, 'set'=>$set));
+      $gexp = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -538,13 +544,14 @@ if ($act == 'exu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gexp && p()) {
-    $pdate = db_read(array('table' => 'expense',
-                           'col' => '!DATE(`dt`)',
-                           'where' => '`id` = '.$gexp,
-                           ));
+    $pdate = $db->
+      table('expense')->
+      col('!DATE(`dt`)')->
+      where('`id` = '.$gexp)->
+      r();
 
     //history_copy();
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     //if ($result)  b('ok');
     //else          b('failed');
@@ -565,21 +572,23 @@ if ($act == 'eie' && p('edit') ) {
 
   if (!$gexp && $grow)  $gexp = $grow;
 
-  $exp_item = array('p' => $gexp,
-                    'price' => 0,
-                    'quantity' => 0,
-                    'type' => 1,
-                    'desc' => '',
-                    );
+  $exp_item = array(
+    'p' => $gexp,
+    'price' => 0,
+    'quantity' => 0,
+    'type' => 1,
+    'desc' => '',
+    );
 
   if ($gexi) {
     $col = array();
     foreach ($exp_item as $k=>$v)  $col[] = $k;
 
-    $exp_item = db_read(array('table' => 'expense_item',
-                              'col' => $col,
-                              'where' => '`id` = '.$gexi,
-                              ));
+    $exp_item = $db->
+      table('expense_item')->
+      col($col)->
+      where('`id` = '.$gexi)->
+      r();
     }
 
 
@@ -599,10 +608,10 @@ if ($act == 'eie' && p('edit') ) {
   b();
 
 
-  b(form('exp_item', '/'.$mod.'/eiu/?'
-    .($gexp ? '&exp='.$gexp : '')
-    .($gexi ? '&exi='.$gexi : '')
-    ));
+  b(form('exp_item', '/'.$mod.'/eiu/', array(
+    $gexp ? 'exp='.$gexp : '',
+    $gexi ? 'exi='.$gexi : '',
+    )));
 
   b('<table class="edt">');
 
@@ -661,24 +670,25 @@ if ($act == 'eiu' && p('edit') ) {
     $set['type'] = postn('f_ei_type');
 
     if ($gexi) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
 
-      $pdate = db_read(array('table' => array('expense', 'expense_item'),
-                             'col' => '!DATE(`expense`.`dt`)',
-                             'where' => array('`expense`.`id` = `expense_item`.`p`',
-                                              '`expense_item`.`id` = '.$gexi,
-                                              ),
-                             ));
+      $pdate = $db->
+        table('expense', 'expense_item')->
+        col('!DATE(`expense`.`dt`)')->
+        where('`expense`.`id` = `expense_item`.`p`',
+              '`expense_item`.`id` = '.$gexi)->
+        r();
       }
 
     elseif ($gexp) {
       $set['p'] = $gexp;
-      $gexi = db_write(array('table'=>$table, 'set'=>$set));
+      $gexi = $db->table($table)->set($set)->i();
 
-      $pdate = db_read(array('table' => 'expense',
-                             'col' => '!DATE(`dt`)',
-                             'where' => '`id` = '.$gexp,
-                             ));
+      $pdate = $db->
+        table('expense')->
+        col('!DATE(`dt`)')->
+        where('`id` = '.$gexp)->
+        r();
       }
 
     b('/'.$mod.'/?date='.$pdate);
@@ -687,14 +697,14 @@ if ($act == 'eiu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gexi && p()) {
-    $pdate = db_read(array('table' => array('expense', 'expense_item'),
-                           'col' => '!DATE(`expense`.`dt`)',
-                           'where' => array('`expense`.`id` = `expense_item`.`p`',
-                                            '`expense_item`.`id` = '.$gexi,
-                                            ),
-                           ));
+    $pdate = $db->
+      table('expense', 'expense_item')->
+      col('!DATE(`expense`.`dt`)')->
+      where('`expense`.`id` = `expense_item`.`p`',
+            '`expense_item`.`id` = '.$gexi)->
+      r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     //if ($result)  b('ok');
     //else          b('failed');
@@ -725,18 +735,20 @@ if ($act == 'ede' && p('edit') ) {
   if (!$gexp && $grow)  $gexp = $grow;
   $gedt = getn('edt', 1);
 
-  $exp_doc = array('p' => $gexp,
-                   'type' => $gedt,
-                   );
+  $exp_doc = array(
+    'p' => $gexp,
+    'type' => $gedt,
+    );
 
   if ($gexd) {
     $col = array();
     foreach ($exp_doc as $k=>$v)  $col[] = $k;
 
-    $exp_doc = db_read(array('table' => 'expense_doc',
-                             'col' => $col,
-                             'where' => '`id` = '.$gexd,
-                             ));
+    $exp_doc = $db->
+      table('expense_doc')->
+      col($col)->
+      where('`id` = '.$gexd)->
+      r();
     }
 
 
@@ -756,10 +768,10 @@ if ($act == 'ede' && p('edit') ) {
   b();
 
 
-  b(form('exp_doc', '/'.$mod.'/edu/?'
-    .($gexp ? '&exp='.$gexp : '')
-    .($gexd ? '&exd='.$gexd : '')
-    ));
+  b(form('exp_doc', '/'.$mod.'/edu/', array(
+    $gexp ? 'exp='.$gexp : '',
+    $gexd ? 'exd='.$gexd : '',
+    )));
 
   b('<table class="edt">');
 
@@ -803,24 +815,25 @@ if ($act == 'edu' && p('edit') ) {
     $set['type'] = postn('f_ed_type');
 
     if ($gexd) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
 
-      $pdate = db_read(array('table' => array('expense', 'expense_doc'),
-                             'col' => '!DATE(`expense`.`dt`)',
-                             'where' => array('`expense`.`id` = `expense_doc`.`p`',
-                                              '`expense_doc`.`id` = '.$gexd,
-                                              ),
-                             ));
+      $pdate = $db->
+        table('expense', 'expense_doc')->
+        col('!DATE(`expense`.`dt`)')->
+        where('`expense`.`id` = `expense_doc`.`p`',
+              '`expense_doc`.`id` = '.$gexd)->
+        r();
       }
 
     elseif ($gexp) {
       $set['p'] = $gexp;
-      $gexd = db_write(array('table'=>$table, 'set'=>$set));
+      $gexd = $db->table($table)->set($set)->i();
 
-      $pdate = db_read(array('table' => 'expense',
-                             'col' => '!DATE(`dt`)',
-                             'where' => '`id` = '.$gexp,
-                             ));
+      $pdate = $db->
+        table('expense')->
+        col('!DATE(`dt`)')->
+        where('`id` = '.$gexp)->
+        r();
 
       $ed_file = $_FILES['f_ed_file']['tmp_name'];
 
@@ -837,14 +850,14 @@ if ($act == 'edu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gexd && p()) {
-    $pdate = db_read(array('table' => array('expense', 'expense_doc'),
-                           'col' => '!DATE(`expense`.`dt`)',
-                           'where' => array('`expense`.`id` = `expense_doc`.`p`',
-                                            '`expense_doc`.`id` = '.$gexd,
-                                            ),
-                           ));
+    $pdate = $db->
+      table('expense', 'expense_doc')->
+      col('!DATE(`expense`.`dt`)')->
+      where('`expense`.`id` = `expense_doc`.`p`',
+            '`expense_doc`.`id` = '.$gexd)->
+      r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     //img_upload_fdb ('expense_doc', $gexd, $data);  remove physical file
 

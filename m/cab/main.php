@@ -22,19 +22,18 @@ include 'm/log/const.php';
 if (!$act) {
   include 'l/lib_ua.php';
 
-  $sess = db_read(array('table' => 'sess',
-                        'col' => array('id', '@ip', 'ua', 'date', 'datel'),
-                        'where' => array('`user` = '.$auth['id'],
-                                         '`stat` = 0',
-                                         ),
-                        'order' => '`datel` DESC',
-                        'key' => 'id',
-                        ));
+  $sess = $db->
+    table('sess')->
+    col('id', 'ip', 'ua', 'date', 'datel')->
+    where('`user` = '.$auth['id'],
+          '`stat` = 0')->
+    order('`datel` DESC')->
+    key('id')->
+    r();
 
 
     // ---- submenu ---- //
   $submenu['Выйти;lock'] = '/'.$mod.'/lof/';
-  //if (p())  $submenu['Regenerate icons;wrench-screwdriver'] = '/'.$mod.'/subicons/';
   submenu();
     // ---- end: submenu ---- //
 
@@ -71,7 +70,7 @@ if (!$act) {
 
 
       b('<td>');
-      b($v['@ip']);
+      b(inet_ntoa($v['ip']));
 
 
       b('<td>');
@@ -104,7 +103,7 @@ if (!$act) {
   // -------------------------------- session revoke proxy ------------------------------------ //
 
 if ($act == 'srk') {
-  db_write(array('table'=>'sess', 'set'=>array('stat'=>2), 'where'=>'`id` = '.$grow));
+  $db->table('sess')->set('stat', 2)->where('`id` = '.$grow)->u();
 
   $redirect = '/'.$mod.'/';
   }
@@ -112,13 +111,11 @@ if ($act == 'srk') {
 
 
 
-  // -------------------------------- Logout ------------------------------------ //
+  // -------------------------------- graceful Logout ------------------------------------ //
 
 if ($act == 'lof') {
 
-    // -- graceful logout -- //
-
-  db_write(array('table'=>'sess', 'set'=>array('stat'=>1), 'where'=>'`sid` = UNHEX(\''.cookieh('bdsx_sid').'\')'));
+  $db->table('sess')->set('stat', 1)->where('`sid` = ?')->wa(unhex(cookieh('s')))->u();
 
 
     // -- clear cookie -- //
@@ -126,7 +123,7 @@ if ($act == 'lof') {
   header ("Cache-Control: no-cache, must-revalidate");
   header ("Expires: Thu, 17 Apr 1991 12:00:00 GMT");
 
-  setcookie('bdsx_sid', '', time()-60*60, '/');
+  setcookie('s', '', time()-60*60, '/');
 
   $redirect = '/';
   }

@@ -21,18 +21,18 @@ $guct = getn('uct');
 
 if (!$act && !$gusr) {
 
-   $user = db_read(array('table' => 'user',
-                         'col' => array('id', 'name', 'cat', 'login'),
+   $user = $db->
+     table('user')->
+     col('id', 'name', 'cat', 'login')->
+     key('id')->
+     r();
 
-                         'key' => 'id',
-                         ));
 
-
-   $user_cat = db_read(array('table' => 'user_cat',
-                             'col' => array('id', 'desc'),
-
-                             'key' => 'id',
-                             ));
+   $user_cat = $db->
+     table('user_cat')->
+     col('id', 'desc')->
+     key('id')->
+     r();
 
 
     // ---- submenu ---- //
@@ -147,14 +147,15 @@ if ($act == 'sch') {
   $user = array();
 
   if ($psch) {
-    $user = db_read(array('table' => 'user',
-                            'col' => array('id', 'name'),
-                            'where' => '`name` LIKE \''.$psch.'%\'',
-                            'order' => '`name`',
-                            'limit' => '100',
-
-                            'key' => 'id',
-                            ));
+    $user = $db->
+      table('user')->
+      col('id', 'name')->
+      where('`name` LIKE ?')->
+      wa($psch.'%')->
+      order('`name`')->
+      limit('100')->
+      key('id')->
+      r();
     }
 
 
@@ -185,17 +186,18 @@ if ($act == 'sch') {
 
 if (!$act && $gusr) {
 
-  $user = db_read(array('table' => 'user',
-                        'col' => array('name', 'login'),
-                        'where' => '`id` = '.$gusr,
-                        ));
+  $user = $db->
+    table('user')->
+    col('name', 'login')->
+    where('`id` = '.$gusr)->
+    r();
 
-  $user_cat = db_read(array('table' => array('user', 'user_cat'),
-                            'col' => 'desc',
-                            'where' => array('`user`.`id` = '.$gusr,
-                                             '`user_cat`.`id` = `user`.`cat`',
-                                             ),
-                            ));
+  $user_cat = $db->
+    table('user', 'user_cat')->
+    col('desc')->
+    where('`user`.`id` = '.$gusr,
+          '`user_cat`.`id` = `user`.`cat`')->
+    r();
 
 
     // ---- submenu ---- //
@@ -254,18 +256,19 @@ if ($act == 'use' && p('edit')) {
     $col = array();
     foreach ($user as $k=>$v)  $col[] = $k;
 
-    $user = db_read(array('table' => 'user',
-                          'col' => $col,
-                          'where' => '`id` = '.$gusr,
-                          ));
+    $user = $db->
+      table('user')->
+      col($col)->
+      where('`id` = '.$gusr)->
+      r();
     }
 
-  $user_cat = db_read(array('table' => 'user_cat',
-                            'col' => array('id', 'desc'),
-
-                            'key' => 'id',
-                            'value' => 'desc',
-                            ));
+  $user_cat = $db->
+    table('user_cat')->
+    col('id', 'desc')->
+    key('id')->
+    value('desc')->
+    r();
 
 
     // ---- submenu ---- //
@@ -282,9 +285,9 @@ if ($act == 'use' && p('edit')) {
   b('</p>');
   b();
 
-  b(form('user', '/'.$mod.'/usu/?'
-    .($gusr ? '&usr='.$gusr : '')
-    ));
+  b(form('user', '/'.$mod.'/usu/', array(
+    $gusr ? 'usr='.$gusr : '',
+    )));
 
   b('<table class="edt">');
 
@@ -339,6 +342,7 @@ $.event("login", "keyup", $.delay(function() {$.ajax("/'.$mod.'/clg/", function(
 
 if ($act == 'usu' && p('edit')) {
   $ajax = TRUE;
+  //http_response_code(418);
 
   $post = postb('f_usr_name');
   $table = 'user';
@@ -350,27 +354,29 @@ if ($act == 'usu' && p('edit')) {
     $set['name'] = post('f_usr_name');
 
     if (p('edit_login')) {
-      $check = db_read(array('table' => 'user',
-                             'col' => 'id',
-                             'where' => '`login` = \''.post('f_usr_login').'\'',
-                             ));
+      $check = $db->
+        table('user')->
+        col('id')->
+        where('`login` = ?')->
+        wa(post('f_usr_login'))->
+        r();
       if ($check && $check != $gusr)  die('error: user with the same login is exists.');
 
       $set['login'] = post('f_usr_login');
       $set['cat'] = postn('f_usr_cat');
 
-      if (post('f_usr_pass'))  $f_usr_pass = hash('sha512', post('f_usr_pass', 15));
+      if (post('f_usr_pass'))  $f_usr_pass = hash('sha512', post('f_usr_pass', 15), TRUE);
       elseif (postb('f_usr_pass') && post('f_usr_pass') === '0')  $f_usr_pass = '';
-      if (isset($f_usr_pass))  $set['#pass'] = $f_usr_pass;
+      if (isset($f_usr_pass))  $set['pass'] = $f_usr_pass;
       }
 
     if (!$gusr) {
-      if (!isset($f_usr_pass))  $set['#pass'] = '';
-      $gusr = db_write(array('table' => $table, 'set' => $set));
+      if (!isset($f_usr_pass))  $set['pass'] = '';
+      $gusr = $db->table($table)->set($set)->i();
       }
 
     else {
-      db_write(array('table' => $table, 'set' => $set, 'where' => $where));
+      $db->table($table)->set($set)->where($where)->u();
       }
   
     b('/'.$mod.'/');
@@ -379,7 +385,7 @@ if ($act == 'usu' && p('edit')) {
 
     // ---- deletion ---- //
   if (!$post && $gusr && p()) {
-    db_write(array('table' => $table, 'where' => $where));
+    $db->table($table)->where($where)->d();
     b('/'.$mod.'/');
     }
   }
@@ -396,10 +402,12 @@ if ($act == 'clg') {
   $psch = filter_rlns($psch);
 
   if ($psch) {
-    $user = db_read(array('table' => 'user',
-                          'col' => 'id',
-                          'where' => '`login` = \''.$psch.'\'',
-                          ));
+    $user = $db->
+      table('user')->
+      col('id')->
+      where('`login` = ?')->
+      wa($psch)->
+      r();
     if ($user)  b('1');
     }
 
@@ -422,21 +430,20 @@ if ($act == 'clg') {
 if ($act == 'ucl' && p('edit_cat')) {
   include 'c/mcache.php';
 
-  $user_cat = db_read(array('table' => 'user_cat',
-                            'col' => array('id', 'desc', 'perm'),
+  $user_cat = $db->
+    table('user_cat')->
+    col('id', 'desc', 'perm')->
+    key('id')->
+    r();
 
-                            'key' => 'id'
-                            ));
 
-
-  $user = db_read(array('table' => array('user_cat', 'user'),
-                        'col' => array('user_cat`.`id` AS `cat_id', 
-                                       'user`.`id', 'user`.`name',
-                                       ),
-                        'where' => '`user`.`cat` = `user_cat`.`id`',
-
-                        'key' => array('cat_id', 'id'),
-                        ));
+  $user = $db->
+    table('user_cat', 'user')->
+    col('user_cat`.`id` AS `cat_id', 
+        'user`.`id', 'user`.`name')->
+    where('`user`.`cat` = `user_cat`.`id`')->
+    key('cat_id', 'id')->
+    r();
   
 
     // ---- submenu ---- //
@@ -473,8 +480,6 @@ if ($act == 'ucl' && p('edit_cat')) {
       b('<a href="/'.$mod.'/upe/?uct='.$k.'">');
 
       if ($v['perm']) {
-        //b($v['perm'].'<br>');
-
         $tmp = explode (';', $v['perm']);
 
         $btmp = array();
@@ -494,16 +499,6 @@ if ($act == 'ucl' && p('edit_cat')) {
 
 
           if ($tmp3) {
-            //$c = '';
-            //for ($i = 0; $i < 32; $i++) {
-            //  if ($tmp2[1] & (1<<$i)) {
-            //    if ($c)  b('<br>├ '.$c);
-            //    if (isset($dir[$tmp2[0]]['perm'][$i]))  $c = $dir[$tmp2[0]]['perm'][$i];
-            //    else  $c = '<span class="red">'.$i.'</span>';
-            //    }
-            //  }
-            //if ($c)  b('<br>└ '.$c);
-
             $c = 1;
             foreach ($tmp3 as $kkk=>$vvv) {
               $btmp[] = '&nbsp; &nbsp; '.
@@ -554,10 +549,11 @@ if ($act == 'ucl' && p('edit_cat')) {
 
 if ($act == 'uce' && p('edit_cat')) {
 
-  $desc = db_read(array('table' => 'user_cat',
-                        'col' => 'desc',
-                        'where' => '`id`='.$guct,
-                        ));
+  $desc = $db->
+    table('user_cat')->
+    col('desc')->
+    where('`id`='.$guct)->
+    r();
 
 
     // ---- submenu ---- //
@@ -575,9 +571,9 @@ if ($act == 'uce' && p('edit_cat')) {
   b();
 
 
-  b(form('user_cat', '/'.$mod.'/ucu/?'
-    .($guct ? '&uct='.$guct : '')
-    ));
+  b(form('user_cat', '/'.$mod.'/ucu/', array(
+    $guct ? 'uct='.$guct : '',
+    )));
 
   b('<table class="edt w2">');
 
@@ -614,14 +610,14 @@ if ($act == 'ucu' && p('edit_cat')) {
     $set['desc'] = post('f_uct_desc');
 
     if ($guct) {
-      $result = db_write(array('table' => $table, 'set' => $set, 'where' => $where));
+      $result = $db->table($table)->set($set)->where($where)->u();
       b('/'.$mod.'/ucl/');
       }
 
     else {
       $set['perm'] = '';
 
-      $guct = db_write(array('table' => $table, 'set' => $set));
+      $guct = $db->table($table)->set($set)->i();
       b('/'.$mod.'/upe/?uct='.$guct);
       }
     }
@@ -629,7 +625,7 @@ if ($act == 'ucu' && p('edit_cat')) {
 
     // -- delete -- //
   if (!$post && $guct && p()) {
-    $result = db_write(array('table' => $table, 'where' => $where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/ucl/');
     }
@@ -644,10 +640,11 @@ if ($act == 'ucu' && p('edit_cat')) {
 if ($act == 'upe' && $guct && p('edit_cat')) {
   include 'c/mcache.php';
 
-  $user_cat = db_read(array('table' => 'user_cat',
-                            'col' => array('desc', 'perm'),
-                            'where' => '`id`='.$guct,
-                            ));
+  $user_cat = $db->
+    table('user_cat')->
+    col('desc', 'perm')->
+    where('`id`='.$guct)->
+    r();
 
 
     // ---- parse params ---- //
@@ -736,11 +733,8 @@ if ($act == 'upu' && $guct && p('edit_cat')) {
   $f_module = implode(';', $tmp);
 
   if ($guct) {
-    db_write(array('table' => $table, 'set' => array('perm' => $f_module), 'where' => $where));
+    $db->table($table)->set('perm', $f_module)->where($where)->u();
     }
-  //else {
-  //  db_write(array('table' => 'user_cat', 'set' => array('perm' => $f_module)) );
-  //  }
 
   b('/'.$mod.'/ucl/');
   }

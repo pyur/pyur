@@ -26,11 +26,11 @@ if (!$act) {
 
   include 'm/log/const.php';
 
-  $host = db_read(array('table' => 'host',
-                        'col' => array('id', '@ip', '@ipe', 'dateb', 'datee', 'metric', 'desc', 'stat', 'color', 'type'),
-
-                        'key' => 'id',
-                        ));
+  $host = $db->
+    table('host')->
+    col('id', 'ip', 'ipe', 'dateb', 'datee', 'metric', 'desc', 'stat', 'color', 'type')->
+    key('id')->
+    r();
 
 
     // ---- submenu ---- //
@@ -70,10 +70,10 @@ if (!$act) {
 
 
       b('<td>');
-      b($v['@ip']);
+      b(inet_ntoa($v['ip']));
 
       b('<td>');
-      b($v['@ipe']);
+      b(inet_ntoa($v['ipe']));
 
 
       b('<td>');
@@ -131,25 +131,22 @@ if ($act == 'hse' && p('edit') ) {
 
   include 'm/log/const.php';
 
-  $host = array('@ip' => '',
-                '@ipe' => '',
-                'dateb' => '0000-00-00',
-                'datee' => '0000-00-00',
-                'metric' => 0,
-                'desc' => '',
-                'stat' => 0,
-                'color' => '',
-                'type' => 0,
-                );
+  $host = array(
+    '@ip' => '',
+    '@ipe' => '',
+    'dateb' => '0000-00-00',
+    'datee' => '0000-00-00',
+    'metric' => 0,
+    'desc' => '',
+    'stat' => 0,
+    'color' => '',
+    'type' => 0,
+    );
 
   if ($ghst) {
     $col = array();
     foreach ($host as $k=>$v)  $col[] = $k;
-
-    $host = db_read(array('table' => 'host',
-                          'col' => $col,
-                          'where' => '`id` = '.$ghst,
-                          ));
+    $host = $db->table('host')->col($col)->where('`id` = '.$ghst)->r();
     }
 
 
@@ -262,14 +259,14 @@ if ($act == 'hsu' && p('edit') ) {
     $set['type'] = post('f_hst_type');
 
     if ($ghst) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      //$check = db_read(array('table'=>'host', 'col'=>'id', 'where'=>'`address`=\''.$set['address'].'\''));
+      //$check = db_!read(array('table'=>'host', 'col'=>'id', 'where'=>'`address`=\''.$set['address'].'\''));
       //if ($check)  die('error: such ip already exists.');
 
-      db_write(array('table'=>$table, 'set'=>$set));
+      $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/');
@@ -278,7 +275,7 @@ if ($act == 'hsu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $ghst && p()) {
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/');
     }  // end: delete
@@ -296,10 +293,11 @@ if ($act == 'hsu' && p('edit') ) {
 
 if ($act == 'srv') {
 
-  $server = db_read(array('table' => 'server',
-                          'col' => array('id', 'tp', 'desc', 'logname', 'rhost', 'format'),
-                          'key' => 'tp',
-                          ));
+  $server = $db->
+    table('server')->
+    col('id', 'tp', 'desc', 'logname', 'rhost', 'format')->
+    key('tp')->
+    r();
   $server = tsort($server);
 
 
@@ -372,28 +370,26 @@ if ($act == 'srv') {
 
 if ($act == 'sre' && p('edit') ) {
 
-  $pserver = db_read(array('table' => 'server',
-                           'col' => array('id', 'tp', 'desc'),
-                           'key' => 'tp',
-                           ));
+  $pserver = $db->
+    table('server')->
+    col('id', 'tp', 'desc')->
+    key('tp')->
+    r();
   $pserver = tsort($pserver, 'desc', $gsrv);
 
 
-  $server = array('tp' => 0,
-                  'desc' => '',
-                  'logname' => '',
-                  'rhost' => 0,
-                  'format' => 0,
-                  );
+  $server = array(
+    'tp' => 0,
+    'desc' => '',
+    'logname' => '',
+    'rhost' => 0,
+    'format' => 0,
+    );
 
   if ($gsrv) {
     $col = array();
     foreach ($server as $k=>$v)  $col[] = $k;
-
-    $server = db_read(array('table' => 'server',
-                            'col' => $col,
-                            'where' => '`id` = '.$gsrv,
-                            ));
+    $server = $db->table('server')->col($col)->where('`id` = '.$gsrv)->r();
     }
 
 
@@ -413,9 +409,9 @@ if ($act == 'sre' && p('edit') ) {
   b();
 
 
-  b(form('server', '/'.$mod.'/sru/?'
-    .($gsrv ? '&srv='.$gsrv : '')
-    ));
+  b(form('server', '/'.$mod.'/sru/', array(
+    $gsrv ? 'srv='.$gsrv : '',
+    )));
 
   b('<table class="edt">');
 
@@ -478,20 +474,20 @@ if ($act == 'sru' && p('edit') ) {
     $set['format'] = postn('f_srv_format');
 
     if ($gsrv) {
-      $rem = db_read(array('table'=>$table, 'col'=>'tp', 'where'=>$where));
-      if ($rem !== '' && $rem != $set['tp'])  db_write(array('table'=>$table, 'set'=>array('tp'=>$rem), 'where'=>'`tp`='.$gsrv));
+      $rem = $db->table($table)->col('tp')->where($where)->r();
+      if ($rem !== '' && $rem != $set['tp'])  $db->table($table)->set('tp', $rem)->where('`tp`='.$gsrv)->u();
       }
-    $ins = db_read(array('table'=>$table, 'col'=>'id', 'where'=>'`tp`='.$set['tp']));
+    $ins = $db->table($table)->col('id')->where('`tp`='.$set['tp'])->r();
 
     if ($gsrv) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $gsrv = db_write(array('table'=>$table, 'set'=>$set));
+      $gsrv = $db->table($table)->set($set)->i();
       }
 
-    if ($ins && $ins != $gsrv)  db_write(array('table'=>$table, 'set'=>array('tp'=>$gsrv), 'where'=>'`id`='.$ins));
+    if ($ins && $ins != $gsrv)  $db->table($table)->set('tp', $gsrv)->where('`id`='.$ins)->u();
 
     b('/'.$mod.'/srv/');
     }
@@ -499,10 +495,10 @@ if ($act == 'sru' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $gsrv && p()) {
-    $rem = db_read(array('table'=>$table, 'col'=>'tp', 'where'=>$where));
-    if ($rem !== '')  db_write(array('table'=>$table, 'set'=>array('tp'=>$rem), 'where'=>'`tp`='.$gsrv));
+    $rem = $db->table($table)->col('tp')->where($where)->r();
+    if ($rem !== '')  $db->table($table)->set('tp',$rem)->where('`tp`='.$gsrv)->u();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/srv/');
     }  // end: delete

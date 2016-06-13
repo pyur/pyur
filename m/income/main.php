@@ -36,16 +36,18 @@ if (!$act) {
   $gmon = datee($gdate,'m');
   $gmdays = date('t', mktime(0, 0, 0, $gmon, 1, $gyear));
 
-  $where = array('`income`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
-                 '`income`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
-                 );
+  $where = array(
+    '`income`.`dt` >= \''.datesql($gyear, $gmon, 1, 0, 0, 0).'\'',
+    '`income`.`dt` <= \''.datesql($gyear, $gmon, $gmdays, 23, 59, 59).'\'',
+    );
 
-  $income = db_read(array('table' => 'income',
-                          'col' => array('id', 'dt', 'money', 'person', 'desc'),
-                          'where' => $where,
-                          'order' => '`dt`',
-                          'key' => 'id',
-                          ));
+  $income = $db->
+    table('income')->
+    col('id', 'dt', 'money', 'person', 'desc')->
+    where($where)->
+    order('`dt`')->
+    key('id')->
+    r();
 
 
     // ---- submenu ---- //
@@ -146,11 +148,12 @@ if ($act == 'ine' && p('edit') ) {
 
   //asort($db_person);
 
-  $income = array('dt' => $curr['datetime'],
-                  'money' => 0,
-                  'person' => 0,
-                  'desc' => '',
-                  );
+  $income = array(
+    'dt' => $curr['datetime'],
+    'money' => 0,
+    'person' => 0,
+    'desc' => '',
+    );
   $income['dt'][17] = '0';
   $income['dt'][18] = '0';
 
@@ -158,10 +161,11 @@ if ($act == 'ine' && p('edit') ) {
     $col = array();
     foreach ($income as $k=>$v)  $col[] = $k;
 
-    $income = db_read(array('table' => 'income',
-                            'col' => $col,
-                            'where' => '`id` = '.$ginc,
-                            ));
+    $income = $db->
+      table('income')->
+      col($col)->
+      where('`id` = '.$ginc)->
+      r();
     }
 
 
@@ -181,9 +185,9 @@ if ($act == 'ine' && p('edit') ) {
   b();
 
 
-  b(form('income', '/'.$mod.'/inu/?'
-    .($ginc ? '&inc='.$ginc : '')
-    ));
+  b(form('income', '/'.$mod.'/inu/', array(
+    $ginc ? 'inc='.$ginc : '',
+    )));
 
   b('<table class="edt">');
 
@@ -243,11 +247,11 @@ if ($act == 'inu' && p('edit') ) {
     $set['desc'] = post('f_income_desc');
 
     if ($ginc) {
-      db_write(array('table'=>$table, 'set'=>$set, 'where'=>$where));
+      $db->table($table)->set($set)->where($where)->u();
       }
 
     else {
-      $ginc = db_write(array('table'=>$table, 'set'=>$set));
+      $ginc = $db->table($table)->set($set)->i();
       }
 
     b('/'.$mod.'/?date='.substr($set['dt'],0,10));
@@ -256,12 +260,13 @@ if ($act == 'inu' && p('edit') ) {
 
     // ---- deletion ---- //
   if (!$post && $ginc && p()) {
-    $pdate = db_read(array('table' => 'income',
-                           'col' => '!DATE(`dt`)',
-                           'where' => $where,
-                           ));
+    $pdate = $db->
+      table('income')->
+      col('!DATE(`dt`)')->
+      where($where)->
+      r();
 
-    $result = db_write(array('table'=>$table, 'where'=>$where));
+    $result = $db->table($table)->where($where)->d();
 
     b('/'.$mod.'/?date='.$pdate);
     }  // end: delete

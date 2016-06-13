@@ -597,14 +597,5 @@ var pyur = {
   };
 
 
-
-
-  // ---------------- Global vars ---------------- //
-
-var gpage;
-
-
-
-
 var $ = pyur;
 

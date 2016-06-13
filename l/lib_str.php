@@ -248,11 +248,12 @@ function filter_phone($text) {
 function filter_phonen($text) {
   $filter = array('0','1','2','3','4','5','6','7','8','9');
   $text = filter($text, $filter);
-  if     (strlen($text) > 11)  $text = substr($text, 0, 11);
-  if     (strlen($text) == 11 && substr($text, 0, 2) == '89')  $text = substr($text, 1);
-  elseif (strlen($text) == 11 && substr($text, 0, 2) == '79')  $text = substr($text, 1);
-  elseif (strlen($text) == 11 && substr($text, 0, 2) == '84')  $text = substr($text, 1);
-  elseif (strlen($text) == 11 && substr($text, 0, 2) == '74')  $text = substr($text, 1);
+  if (strlen($text) > 11)  $text = substr($text, 0, 11);
+  if (strlen($text) == 11) {
+    if     ($text[0] == '8' && ($text[1] == '9' || $text[1] == '4'))  $text = substr($text, 1);
+    elseif ($text[0] == '7' && ($text[1] == '9' || $text[1] == '4'))  $text = substr($text, 1);
+    }
+  if (strlen($text) > 10)  $text = substr($text, 0, 10);
   return  $text;
   }
 
@@ -334,20 +335,293 @@ function cookieb($a) {
 
 
   // -------------------------------- make phone human readable -------------------------------- //
+  // -------------------------------- rederive dashes in phone number -------------------------------- //
 
-function  phoned($phone) {
-  $phoned = $phone;
+function  phoned($item_phone) {
 
-  if (strlen($phone) == 10) {
-    if ($phone[0] == '9') {
-      $phoned = substr($phone,0,3).'-'.substr($phone,3,3).'-'.substr($phone,6,2).'-'.substr($phone,8,2);
+  if ( strpos($item_phone, '-') !== FALSE )  return  $item_phone;
+
+
+
+  if (strlen($item_phone) == 11) {
+
+      // 8-915-575-55-50, 7-915-575-55-50
+    if (substr($item_phone, -10,1) == '9') {
+
+      $item_phone =
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    elseif (substr($item_phone, -10,5) == '47241') {
+      // 8-47241-2-36-46 - губкин
+      $item_phone =
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,5).
+                  '-'.
+                  substr($item_phone, -5,1).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    else {
+      // 8-4722-37-42-67 - белгород, страрый оскол
+      $item_phone =
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,4).
+                  '-'.
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    }
+
+
+  elseif (strlen($item_phone) == 10) {
+    // 915-575-55-50
+    if (substr($item_phone, -10,1) == '9') {
+      $item_phone =
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    elseif (substr($item_phone, -10,2) == '49') {
+      // 495-580-91-92, 499-504-43-06 - москва
+      $item_phone =
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    elseif (substr($item_phone, -10,5) == '47241') {
+      // 47241-2-36-46 - губкин
+      $item_phone =
+                  substr($item_phone, -10,5).
+                  '-'.
+                  substr($item_phone, -5,1).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    else {
+      // 4722-37-42-67 - белгород, страрый оскол
+      $item_phone =
+                  substr($item_phone, -10,4).
+                  '-'.
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    }
+
+
+  elseif (strlen($item_phone) == 7) {
+    // 232-27-86 - воронеж
+    $item_phone = 
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+  elseif (strlen($item_phone) == 6) {
+    $item_phone = 
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+  elseif (strlen($item_phone) == 5) {
+    $item_phone = 
+                  substr($item_phone, -5,1).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+
+    // ---------------- по два номера ---------------- //
+
+  elseif (strlen($item_phone) == 12) {
+    // 43-30-80, 43-30-04
+    $item_phone = 
+                  substr($item_phone, -12,2).
+                  '-'.
+                  substr($item_phone, -10,2).
+                  '-'.
+                  substr($item_phone, -8,2).
+                  ', '.
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+  elseif (strlen($item_phone) == 17) {
+
+    // 55-44-27, 8-919-226-91-57
+    if (substr($item_phone, -11,2) == '89') {
+      $item_phone = 
+                  substr($item_phone, -17,2).
+                  '-'.
+                  substr($item_phone, -15,2).
+                  '-'.
+                  substr($item_phone, -13,2).
+                 ', '.
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
+
+    // 8-919-226-91-57, 55-44-27
+    if (substr($item_phone, 0,2) == '89' || substr($item_phone, 0,2) == '79') {
+      $item_phone = 
+                  substr($item_phone, -17,1).
+                  '-'.
+                  substr($item_phone, -16,3).
+                  '-'.
+                  substr($item_phone, -13,3).
+                  '-'.
+                  substr($item_phone, -10,2).
+                  '-'.
+                  substr($item_phone, -8,2).
+                 ', '.
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
       }
     }
-  elseif (strlen($phone) == 6) {
-    $phoned = substr($phone,0,2).'-'.substr($phone,2,2).'-'.substr($phone,6,2);
+
+  elseif (strlen($item_phone) == 21) {
+
+    if (substr($item_phone, -21,2) == '89') {
+      // 8-910-360-03-63, 4-722-33-05-00
+      $item_phone = 
+                  substr($item_phone, -21,1).
+                  '-'.
+                  substr($item_phone, -20,3).
+                  '-'.
+                  substr($item_phone, -17,3).
+                  '-'.
+                  substr($item_phone, -14,2).
+                  '-'.
+                  substr($item_phone, -12,2).
+                  ', '.
+                  substr($item_phone, -10,1).
+                  '-'.
+                  substr($item_phone, -9,3).
+                  '-'.
+                  substr($item_phone, -6,2).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+      }
     }
 
-  return  $phoned;
+  elseif (strlen($item_phone) == 22) {
+    // 8-915-562-57-80, 8-951-147-11-53
+    $item_phone = 
+                  substr($item_phone, -22,1).
+                  '-'.
+                  substr($item_phone, -21,3).
+                  '-'.
+                  substr($item_phone, -18,3).
+                  '-'.
+                  substr($item_phone, -15,2).
+                  '-'.
+                  substr($item_phone, -13,2).
+                  ', '.
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+
+    // ---------------- по два номера ---------------- //
+
+  elseif (strlen($item_phone) == 33) {
+    // 8-961-172-03-07, 8-915-570-40-97, 8-919-438-39-99
+    $item_phone = 
+                  substr($item_phone, -33,1).
+                  '-'.
+                  substr($item_phone, -32,3).
+                  '-'.
+                  substr($item_phone, -29,3).
+                  '-'.
+                  substr($item_phone, -26,2).
+                  '-'.
+                  substr($item_phone, -24,2).
+                  ', '.
+                  substr($item_phone, -22,1).
+                  '-'.
+                  substr($item_phone, -21,3).
+                  '-'.
+                  substr($item_phone, -18,3).
+                  '-'.
+                  substr($item_phone, -15,2).
+                  '-'.
+                  substr($item_phone, -13,2).
+                  ', '.
+                  substr($item_phone, -11,1).
+                  '-'.
+                  substr($item_phone, -10,3).
+                  '-'.
+                  substr($item_phone, -7,3).
+                  '-'.
+                  substr($item_phone, -4,2).
+                  '-'.
+                  substr($item_phone, -2,2);
+    }
+
+  return  $item_phone;
   }
 
 
@@ -518,6 +792,92 @@ function pend($n, $r='') {
 
   return $n;
   }
+
+
+
+
+  // -------------------------------- UNHEX -------------------------------- //
+
+function unhex($hexstr) {
+  // terminate if size odd
+  $hexstr = strtolower($hexstr);
+
+  $hex = array('0'=>0, '1'=>1, '2'=>2, '3'=>3, '4'=>4, '5'=>5, '6'=>6, '7'=>7, '8'=>8, '9'=>9, 'a'=>10, 'b'=>11, 'c'=>12, 'd'=>13, 'e'=>14, 'f'=>15);
+
+  $out = '';
+
+  $size = strlen($hexstr);
+  for ($i = 0; $i < $size; $i+=2) {
+    $out .= chr( ($hex[$hexstr[$i]] << 4) + $hex[$hexstr[$i+1]] );
+    }
+
+  return  $out;
+  }
+
+
+function tohex($str) {
+  $hexH = array(0=>'0', 16=>'1', 32=>'2', 48=>'3', 64=>'4', 80=>'5', 96=>'6', 112=>'7', 128=>'8', 144=>'9', 160=>'a', 176=>'b', 192=>'c', 208=>'d', 224=>'e', 240=>'f');
+  $hexL = array(0=>'0', 1=>'1', 2=>'2', 3=>'3', 4=>'4', 5=>'5', 6=>'6', 7=>'7', 8=>'8', 9=>'9', 10=>'a', 11=>'b', 12=>'c', 13=>'d', 14=>'e', 15=>'f');
+
+  $out = '';
+
+  $size = strlen($str);
+  for ($i = 0; $i < $size; $i++) {
+    $byte = ord($str[$i]);
+    $out .= $hexH[$byte & 0xF0];
+    $out .= $hexL[$byte & 0xF];
+    }
+
+  return  $out;
+  }
+
+
+function php($unpacked) {
+  $unpacked = filter_phonen($unpacked);
+
+  $out = '';
+  //for ($i = 0; $i < 12; $i++) {
+  for ($i = 0; $i < 10; $i++) {
+    if (isset($unpacked[$i]))  $byte = (int)$unpacked[$i] << 4;
+    else $byte = 240;
+    $i++;
+    if (isset($unpacked[$i]))  $byte += (int)$unpacked[$i];
+    else $byte += 15;
+    $out .= chr($byte);
+    }
+  //echo dh($out);
+  return  $out;
+  }
+
+
+function phu($packed) {
+  static $hexH = FALSE;
+  static $hexL = FALSE;
+
+  if ($hexH === FALSE)  $hexH = array(0=>'0', 16=>'1', 32=>'2', 48=>'3', 64=>'4', 80=>'5', 96=>'6', 112=>'7', 128=>'8', 144=>'9', 160=>'!', 176=>'!', 192=>'!', 208=>'!', 224=>'!', 240=>'');
+  if ($hexL === FALSE)  $hexL = array(0=>'0', 1=>'1', 2=>'2', 3=>'3', 4=>'4', 5=>'5', 6=>'6', 7=>'7', 8=>'8', 9=>'9', 10=>'!', 11=>'!', 12=>'!', 13=>'!', 14=>'!', 15=>'');
+
+  $out = '';
+  //for ($i = 0; $i < 6; $i++) {
+  for ($i = 0; $i < 5; $i++) {
+    $byte = ord($packed[$i]);
+    $out .= $hexH[$byte & 0xF0];
+    $out .= $hexL[$byte & 0xF];
+    }
+
+  return  $out;
+  }
+
+
+function cut($str, $len) {
+  return  mb_substr($str, 0, $len);
+  }
+
+
+function condence_space(&$str) {
+  while(($pos = strpos($str, '  ')) !== FALSE)  $str = strtr($str, array('  '=>' '));
+  }
+
 
 
 ?>
